@@ -25,7 +25,7 @@
 </div></div>
 <div id="overlay" class="overlay"><div class="drawer"><div class="dh"><b id="drawerTitle">New booking</b><button id="close" class="btn">✕</button></div><div id="drawer" class="db"></div></div></div><div id="toast" style="position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#22302C;color:#fff;padding:10px 18px;border-radius:999px;display:none;z-index:50"></div>
 <script>
-const CONFIG={SUPABASE_URL:'https://keqvrekqrfnesgirbyln.supabase.co',SUPABASE_KEY:'sb_publishable_prDBBbsj78fGEk5vzLg97A_hF6ReJFL',COMPANY_WHATSAPP:'+919041068105'};
+const CONFIG={SUPABASE_URL:'https://gaqzoybdlhjtvftykjxs.supabase.co',SUPABASE_KEY:'sb_publishable_prDBBbsj78fGEk5vzLg97A_hF6ReJFL',COMPANY_WHATSAPP:'+919041068105'};
 const sb=supabase.createClient(CONFIG.SUPABASE_URL,CONFIG.SUPABASE_KEY);
 let user=null,profile=null,properties=[],activePropertyId=null,bookings=[],year=new Date().getFullYear(),month=new Date().getMonth(),search='',showAll=false,channel=null,pendingFiles=[];
 const $=id=>document.getElementById(id), esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
