@@ -77,13 +77,13 @@ function form(existing,prefill){
 async function loadBookingFiles(bookingId){
   if(!bookingId) return [];
   let r=await sb.from('booking_files')
-    .select('id,file_name,storage_path,mime_type,size_bytes,created_at')
+    .select('id,file_name,storage_path,mime_type,created_at')
     .eq('booking_id',bookingId)
     .eq('archived',false)
     .order('created_at');
   if(r.error && /booking_files|archived|schema cache|column/i.test(r.error.message||'')){
     r=await sb.from('guest_documents')
-      .select('id,file_name,storage_path,mime_type,size_bytes,created_at')
+      .select('id,file_name,storage_path,mime_type,created_at')
       .eq('booking_id',bookingId)
       .order('created_at');
   }
@@ -119,8 +119,8 @@ function openDate(ds){const a=activeOn(ds)[0],bl=blockedOn(ds);if(a)return openB
 async function blockDate(ds){if(!user)return;const r=await sb.from('blocked_dates').upsert({property_id:activePropertyId,blocked_date:ds,blocked:true,created_by:user.id},{onConflict:'property_id,blocked_date'});if(r.error)return toast(r.error.message);closeDrawer();await loadBookings();render();toast('Date blocked')}
 function openBlock(b){$('drawerTitle').textContent='Blocked date';$('drawer').innerHTML=`<div class="note">${b.checkIn} is blocked/unavailable.</div><div class="drawerActions"><button id="unblock" class="btn primary">Make available</button><button id="x" class="btn">Close</button></div>`;openDrawer();$('x').onclick=closeDrawer;$('unblock').onclick=async()=>{const r=await sb.from('blocked_dates').delete().eq('id',b.id);if(r.error)return toast(r.error.message);closeDrawer();await loadBookings();render();toast('Date available again')}}
 async function saveBooking(existing,status){const name=$('f_name').value.trim(),ci=$('f_in').value,co=$('f_out').value;if(!name||!ci||!co||co<=ci)return $('formErr').textContent='Enter guest name and valid dates.';const overlap=bookings.map(normalize).find(b=>!b.isBlock&&b.status!=='cancelled'&&b.id!==(existing?.id)&&ci<b.checkOut&&co>b.checkIn);if(overlap)return $('formErr').textContent=`Dates already booked by ${overlap.guestName}.`;const row={property_id:activePropertyId,guest_name:name,guest_phone:$('f_mobile').value.trim(),guests:Number($('f_guests').value)||1,check_in:ci,check_out:co,amount:Number($('f_price').value)||0,status:status==='booked'?'booked':status,notes:$('f_notes').value.trim(),created_by:user.id,staff_id:profile?.staff_id||null,staff_name:profile?.full_name||user.email,discount:Number($('f_discount').value)||0,payment_mode:$('f_pay').value,refund_amount:status==='refunded'?(Number($('f_price').value)||0):0,is_block:false};sync(true);const r=existing?await sb.from('bookings').update(row).eq('id',existing.id).select().single():await sb.from('bookings').insert(row).select().single();if(r.error){sync(false);return $('formErr').textContent=r.error.message}const saved=normalize(r.data);for(const f of pendingFiles){const safe=f.name.replace(/[^a-zA-Z0-9._-]/g,'_'),path=`${saved.id}/${Date.now()}_${Math.random().toString(36).slice(2)}_${safe}`;const up=await sb.storage.from('guest-ids').upload(path,f,{upsert:false});if(up.error){toast('Booking saved, but ID upload failed: '+up.error.message);continue}
-    let doc=await sb.from('guest_documents').insert({booking_id:saved.id,property_id:activePropertyId,storage_path:path,file_name:f.name,mime_type:f.type,size_bytes:f.size,created_by:user.id});
-    if(doc.error && /guest_documents|relation|schema cache/i.test(doc.error.message||'')){doc=await sb.from('booking_files').insert({booking_id:saved.id,property_id:activePropertyId,storage_path:path,file_name:f.name,mime_type:f.type,size_bytes:f.size,created_by:user.id})}
+    let doc=await sb.from('guest_documents').insert({booking_id:saved.id,property_id:activePropertyId,storage_path:path,file_name:f.name,mime_type:f.type,created_by:user.id});
+    if(doc.error && /guest_documents|relation|schema cache/i.test(doc.error.message||'')){doc=await sb.from('booking_files').insert({booking_id:saved.id,property_id:activePropertyId,storage_path:path,file_name:f.name,mime_type:f.type,created_by:user.id})}
     if(doc.error) toast('Booking saved, but ID record failed: '+doc.error.message);}sync(false);closeDrawer();await loadBookings();render();toast(existing?'Booking updated':'Booking saved');if(saved.status==='booked'){window.open(companyWhatsApp(saved),'_blank')}}
 function guestWhatsApp(b){let n=String(b.mobile||'').replace(/\D/g,'');if(n.length===10)n='91'+n;return `https://wa.me/${n}?text=${encodeURIComponent(bookingMessage(b))}`}
 function companyWhatsApp(b){return `https://wa.me/${CONFIG.COMPANY_WHATSAPP}?text=${encodeURIComponent(bookingMessage(b,true))}`}
