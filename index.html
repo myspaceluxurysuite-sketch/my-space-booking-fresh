@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>My Space Luxury Suite — Booking</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    *{box-sizing:border-box}body{margin:0;font-family:Arial,sans-serif;background:#f5f7f7;color:#173b3b}
+    .wrap{max-width:1050px;margin:auto;padding:24px}.card{background:white;border-radius:16px;padding:24px;box-shadow:0 8px 30px #0001;margin:18px 0}
+    h1,h2{margin-top:0}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px}
+    input,select,button{width:100%;padding:12px;border:1px solid #ccd6d6;border-radius:9px;font-size:15px}
+    button{background:#174f4f;color:white;border:0;cursor:pointer;font-weight:600}.danger{background:#9b3434}.muted{color:#667}.hidden{display:none}
+    table{width:100%;border-collapse:collapse}th,td{padding:10px;border-bottom:1px solid #e6eded;text-align:left;font-size:14px}
+    .top{display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap}.msg{padding:10px;border-radius:8px;background:#eef7f7;margin-top:10px}
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <section id="login" class="card" style="max-width:430px;margin:70px auto">
+    <h1>Sign in</h1><p class="muted">Use your registered email and password.</p>
+    <input id="email" type="email" placeholder="Email">
+    <br><br><input id="password" type="password" placeholder="Password">
+    <br><br><button onclick="login()">Log in</button>
+    <div id="loginMsg"></div>
+  </section>
+
+  <section id="app" class="hidden">
+    <div class="top">
+      <div><h1>My Space Luxury Suite</h1><div id="who" class="muted"></div></div>
+      <button style="width:auto;padding:10px 18px" onclick="logout()">Log out</button>
+    </div>
+
+    <div id="adminArea" class="hidden">
+      <div class="card">
+        <h2>Properties</h2>
+        <div class="grid">
+          <input id="propertyName" placeholder="Property name">
+          <input id="propertyLocation" placeholder="Location">
+          <button onclick="addProperty()">Add property</button>
+        </div>
+        <div id="propertyMsg"></div>
+      </div>
+
+      <div class="card">
+        <h2>Bookings</h2>
+        <div id="bookingList">Loading…</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>My profile</h2>
+      <div id="profileBox">Loading…</div>
+    </div>
+  </section>
+</div>
+
+<script>
+const SUPABASE_URL = "PASTE_YOUR_SUPABASE_URL_HERE";
+const SUPABASE_ANON_KEY = "PASTE_YOUR_SUPABASE_ANON_KEY_HERE";
+let sb, currentProfile;
+
+function show(id, on=true){document.getElementById(id).classList.toggle("hidden",!on)}
+function msg(id,text){document.getElementById(id).innerHTML='<div class="msg">'+text+'</div>'}
+
+async function init(){
+  if(SUPABASE_URL.includes("PASTE_")){
+    msg("loginMsg","Open <b>config.js</b> and add your Supabase URL and anon public key first.");
+    return;
+  }
+  sb=supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
+  const {data:{session}}=await sb.auth.getSession();
+  if(session) await loadApp(session.user);
+}
+async function login(){
+  if(!sb){msg("loginMsg","Supabase settings are not configured yet.");return}
+  const email=document.getElementById("email").value.trim();
+  const password=document.getElementById("password").value;
+  const {data,error}=await sb.auth.signInWithPassword({email,password});
+  if(error){msg("loginMsg",error.message);return}
+  await loadApp(data.user);
+}
+async function loadApp(user){
+  const {data,error}=await sb.from("profiles").select("*").eq("id",user.id).single();
+  if(error){msg("loginMsg","Login succeeded, but your booking-system profile was not found.");return}
+  currentProfile=data;
+  show("login",false);show("app",true);
+  document.getElementById("who").textContent=user.email+" • "+data.role;
+  document.getElementById("profileBox").innerHTML=
+    "<b>Name:</b> "+(data.full_name||"")+"<br><b>Role:</b> "+data.role+
+    "<br><b>Business:</b> "+(data.business_name||"");
+  if(data.role==="admin"){show("adminArea",true);loadBookings()}
+}
+async function logout(){await sb.auth.signOut();location.reload()}
+async function addProperty(){
+  const name=document.getElementById("propertyName").value.trim();
+  const location=document.getElementById("propertyLocation").value.trim();
+  if(!name){msg("propertyMsg","Enter a property name.");return}
+  const {error}=await sb.from("properties").insert({name,location});
+  if(error) msg("propertyMsg",error.message); else {msg("propertyMsg","Property added.");loadBookings()}
+}
+async function loadBookings(){
+  const {data,error}=await sb.from("bookings").select("*").order("created_at",{ascending:false}).limit(100);
+  if(error){document.getElementById("bookingList").textContent=error.message;return}
+  if(!data.length){document.getElementById("bookingList").textContent="No bookings yet.";return}
+  document.getElementById("bookingList").innerHTML="<table><tr><th>Guest</th><th>Check-in</th><th>Check-out</th><th>Status</th></tr>"+
+    data.map(b=>"<tr><td>"+(b.guest_name||"")+"</td><td>"+(b.check_in||"")+"</td><td>"+(b.check_out||"")+"</td><td>"+(b.status||"")+"</td></tr>").join("")+"</table>";
+}
+init();
+</script>
+</body>
+</html>
