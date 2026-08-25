@@ -1,508 +1,68 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Booking Admin — My Space Luxury Suite</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
-:root{
-  --bg:#FAF7F1; --surface:#FFFFFF; --surface-2:#F1EBDD;
-  --ink:#22302C; --ink-soft:#5B6B63; --ink-faint:#93A099;
-  --border:#E1D8C4; --border-strong:#CBBEA0;
-  --teal:#2B5F5A; --teal-light:#E1EDEA; --teal-dark:#173A36;
-  --sand:#EFE9DB; --coral:#B85A5F; --coral-light:#F6E3E1; --coral-dark:#7A3A3D;
-  --amber:#C87F3A; --amber-light:#FBECD9;
-  --shadow:0 1px 2px rgba(34,48,44,0.06),0 4px 16px rgba(34,48,44,0.06);
-  --radius:14px;
-}
-*{box-sizing:border-box;}
-body{margin:0;background:var(--bg);color:var(--ink);font-family:'Inter',system-ui,sans-serif;-webkit-font-smoothing:antialiased;}
-::selection{background:var(--teal);color:#fff;}
-.wrap{max-width:1180px;margin:0 auto;padding:20px 20px 80px;}
-@media(max-width:480px){ .wrap{padding:14px 12px 60px;} }
-
-.topbar{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:22px;}
-.brand{display:flex;align-items:center;gap:12px;}
-.brand-mark{width:42px;height:42px;border-radius:10px;background:var(--teal);color:#fff;display:flex;align-items:center;justify-content:center;font-family:'Fraunces',serif;font-weight:600;font-size:18px;flex-shrink:0;}
-.brand h1{font-family:'Fraunces',serif;font-weight:600;font-size:20px;margin:0;line-height:1.2;}
-.brand p{margin:2px 0 0;font-size:12.5px;color:var(--ink-soft);}
-.topbar-right{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
-.sync-pill{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--ink-soft);background:var(--surface);border:1px solid var(--border);padding:6px 12px;border-radius:999px;}
-.sync-dot{width:7px;height:7px;border-radius:50%;background:var(--teal);}
-.sync-dot.busy{background:var(--amber);}
-.role-pill{font-size:12px;font-weight:600;color:var(--teal-dark);background:var(--teal-light);padding:6px 12px;border-radius:999px;}
-.role-pill.staff{color:var(--coral-dark);background:var(--coral-light);}
-.logout-btn{font-size:12px;font-weight:600;color:var(--ink-soft);background:var(--surface);border:1px solid var(--border);padding:6px 12px;border-radius:999px;cursor:pointer;}
-.logout-btn:hover{background:var(--surface-2);}
-
-.banner{background:var(--amber-light);border:1px solid #EAC79A;color:var(--coral-dark);border-radius:var(--radius);padding:12px 16px;font-size:12.5px;margin-bottom:18px;line-height:1.5;}
-
-.prop-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:18px;}
-.prop-chip-wrap{position:relative;display:inline-flex;align-items:center;}
-.prop-chip{padding:9px 16px;border-radius:999px;border:1px solid var(--border);background:var(--surface);font-size:13.5px;font-weight:500;color:var(--ink-soft);cursor:pointer;transition:all .15s;white-space:nowrap;}
-.prop-chip:hover{border-color:var(--border-strong);}
-.prop-chip.active{background:var(--teal);border-color:var(--teal);color:#fff;}
-.prop-rm{width:18px;height:18px;border-radius:50%;background:var(--surface);border:1px solid var(--border);color:var(--ink-soft);font-size:10px;cursor:pointer;margin-left:-10px;z-index:2;line-height:1;}
-.prop-add{padding:9px 14px;border-radius:999px;border:1px dashed var(--border-strong);background:transparent;font-size:13px;color:var(--ink-soft);cursor:pointer;}
-.prop-add:hover{border-color:var(--teal);color:var(--teal);}
-.archive-link{font-size:12px;color:var(--ink-faint);text-decoration:underline;cursor:pointer;background:none;border:none;padding:9px 4px;}
-
-.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:22px;}
-@media(max-width:480px){ .stats{grid-template-columns:repeat(2,1fr);} }
-.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px;}
-.stat-card .label{font-size:11.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--ink-soft);margin-bottom:6px;}
-.stat-card .value{font-family:'IBM Plex Mono',monospace;font-size:22px;font-weight:500;}
-
-.export-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px 18px;margin-bottom:22px;display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;}
-.export-left{display:flex;align-items:center;gap:10px;}
-.export-left .ico{width:36px;height:36px;border-radius:9px;background:var(--teal-light);color:var(--teal-dark);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;}
-.export-left h3{margin:0;font-size:14.5px;font-weight:600;}
-.export-left p{margin:2px 0 0;font-size:12px;color:var(--ink-soft);}
-.export-actions{display:flex;gap:8px;flex-wrap:wrap;}
-.export-actions button{padding:9px 14px;border-radius:9px;border:1px solid var(--border);background:var(--bg);font-size:12.5px;font-weight:600;cursor:pointer;color:var(--ink);}
-.export-actions button:hover{background:var(--surface-2);}
-.export-actions button.primary{background:var(--teal);border-color:var(--teal);color:#fff;}
-.export-actions button.primary:hover{background:var(--teal-dark);}
-
-.cal-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);padding:20px;margin-bottom:22px;}
-@media(max-width:480px){ .cal-card{padding:14px;} }
-.cal-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;}
-.cal-head h2{font-family:'Fraunces',serif;font-size:19px;font-weight:600;margin:0;}
-.cal-nav{display:flex;gap:6px;}
-.cal-nav button{width:34px;height:34px;border-radius:8px;border:1px solid var(--border);background:var(--surface);color:var(--ink);font-size:16px;cursor:pointer;}
-.cal-nav button:hover{background:var(--surface-2);}
-.legend{display:flex;gap:16px;font-size:12px;color:var(--ink-soft);margin-bottom:14px;flex-wrap:wrap;}
-.legend span{display:inline-flex;align-items:center;gap:6px;}
-.legend i{width:10px;height:10px;border-radius:3px;display:inline-block;}
-.grid7{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;}
-@media(max-width:480px){ .grid7{gap:4px;} }
-.dow{font-size:11px;text-align:center;color:var(--ink-faint);font-weight:600;text-transform:uppercase;letter-spacing:.04em;padding-bottom:4px;}
-.day{position:relative;min-height:64px;border-radius:10px;border:1px solid var(--border);background:var(--surface);padding:6px 7px;cursor:pointer;transition:transform .1s, box-shadow .1s;overflow:hidden;}
-@media(max-width:480px){ .day{min-height:48px;padding:4px 5px;border-radius:8px;} }
-.day:hover{border-color:var(--border-strong);}
-.day.empty{background:transparent;border:none;cursor:default;}
-.day .num{font-family:'IBM Plex Mono',monospace;font-size:12.5px;color:var(--ink-soft);}
-.day.today .num{color:#fff;background:var(--ink);width:20px;height:20px;border-radius:6px;display:inline-flex;align-items:center;justify-content:center;}
-.day.booked{background:var(--teal-light);border-color:#BFDAD3;}
-.day.booked .num{color:var(--teal-dark);}
-.day.refunded{background:var(--coral-light);border-color:#E6C3C1;}
-.day.refunded .num{color:var(--coral-dark);}
-.day.blocked{background:var(--surface-2);border-color:var(--border-strong);}
-.day.blocked .num{color:var(--ink-faint);}
-.day .guest{font-size:11px;margin-top:4px;color:var(--teal-dark);font-weight:500;line-height:1.25;word-break:break-word;}
-@media(max-width:480px){ .day .guest{display:none;} }
-.day.refunded .guest{color:var(--coral-dark);}
-.day.blocked .guest{color:var(--ink-faint);}
-.day .tagrow{position:absolute;bottom:5px;left:7px;right:7px;display:flex;gap:3px;flex-wrap:wrap;}
-@media(max-width:480px){ .day .tagrow{display:none;} }
-.day .tag{font-size:9px;padding:1px 5px;border-radius:5px;background:var(--teal);color:#fff;font-weight:500;}
-.day .tag.out{background:var(--amber);}
-
-.list-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px;margin-bottom:22px;}
-@media(max-width:480px){ .list-card{padding:14px;} }
-.list-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px;flex-wrap:wrap;}
-.list-head h2{font-family:'Fraunces',serif;font-size:18px;font-weight:600;margin:0;}
-.list-toggle{display:flex;gap:6px;background:var(--surface-2);padding:3px;border-radius:9px;}
-.list-toggle button{border:none;background:transparent;padding:6px 12px;font-size:12.5px;border-radius:7px;cursor:pointer;color:var(--ink-soft);}
-.list-toggle button.active{background:var(--surface);color:var(--ink);font-weight:600;box-shadow:0 1px 2px rgba(0,0,0,0.08);}
-.search-box{border:1px solid var(--border);border-radius:9px;padding:8px 12px;font-size:13px;font-family:inherit;width:220px;max-width:100%;background:var(--bg);}
-.book-row{display:flex;align-items:center;gap:12px;padding:11px 4px;border-bottom:1px solid var(--border);cursor:pointer;}
-.book-row:last-child{border-bottom:none;}
-.book-row:hover{background:var(--surface-2);border-radius:8px;}
-.book-avatar{width:36px;height:36px;border-radius:9px;background:var(--sand);display:flex;align-items:center;justify-content:center;font-weight:600;font-size:13px;color:var(--ink);flex-shrink:0;}
-.book-avatar.st-cancelled{background:var(--surface-2);color:var(--ink-faint);}
-.book-avatar.st-refunded{background:var(--coral-light);color:var(--coral-dark);}
-.book-main{flex:1;min-width:0;}
-.book-main .name{font-weight:600;font-size:14px;}
-.book-main .dates{font-size:12px;color:var(--ink-soft);font-family:'IBM Plex Mono',monospace;}
-.badge{font-size:11px;padding:3px 9px;border-radius:999px;font-weight:600;white-space:nowrap;}
-.badge.booked{background:var(--teal-light);color:var(--teal-dark);}
-.badge.cancelled{background:var(--surface-2);color:var(--ink-soft);}
-.badge.refunded{background:var(--coral-light);color:var(--coral-dark);}
-.book-price{font-family:'IBM Plex Mono',monospace;font-size:13.5px;font-weight:500;min-width:70px;text-align:right;}
-.empty-state{text-align:center;padding:36px 16px;color:var(--ink-soft);}
-
-.overlay{position:fixed;inset:0;background:rgba(34,48,44,0.45);display:none;align-items:flex-end;justify-content:center;z-index:50;}
-.overlay.show{display:flex;}
-.drawer{background:var(--surface);width:100%;max-width:520px;max-height:92vh;overflow-y:auto;border-radius:20px 20px 0 0;padding:0;animation:slideup .22s ease;}
-@media(min-width:640px){ .overlay{align-items:center;} .drawer{border-radius:18px;max-height:88vh;} }
-@keyframes slideup{from{transform:translateY(24px);opacity:0;}to{transform:translateY(0);opacity:1;}}
-.drawer-head{display:flex;align-items:center;justify-content:space-between;padding:18px 22px;border-bottom:1px solid var(--border);position:sticky;top:0;background:var(--surface);border-radius:20px 20px 0 0;}
-.drawer-head h3{font-family:'Fraunces',serif;font-size:18px;margin:0;font-weight:600;}
-.drawer-close{width:32px;height:32px;border-radius:8px;border:1px solid var(--border);background:none;font-size:16px;cursor:pointer;color:var(--ink-soft);}
-.drawer-body{padding:20px 22px 28px;}
-.field{margin-bottom:14px;}
-.field label{display:block;font-size:12.5px;font-weight:600;color:var(--ink-soft);margin-bottom:6px;}
-.field input,.field select,.field textarea{width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:9px;font-family:inherit;font-size:14px;background:var(--bg);color:var(--ink);}
-.field input:focus,.field select:focus,.field textarea:focus{outline:2px solid var(--teal);outline-offset:0;border-color:var(--teal);}
-.row2{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
-.status-picker{display:flex;gap:8px;}
-.status-picker button{flex:1;padding:9px 6px;border-radius:9px;border:1px solid var(--border);background:var(--surface);font-size:12.5px;font-weight:600;cursor:pointer;color:var(--ink-soft);}
-.status-picker button.sel-booked.active{background:var(--teal);border-color:var(--teal);color:#fff;}
-.status-picker button.sel-cancelled.active{background:var(--ink-soft);border-color:var(--ink-soft);color:#fff;}
-.status-picker button.sel-refunded.active{background:var(--coral);border-color:var(--coral);color:#fff;}
-.upload-zone{border:1.5px dashed var(--border-strong);border-radius:10px;padding:16px;text-align:center;cursor:pointer;color:var(--ink-soft);font-size:13px;background:var(--surface-2);}
-.upload-zone:hover{border-color:var(--teal);color:var(--teal);}
-.img-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:10px;}
-.img-grid .thumb{position:relative;border-radius:8px;overflow:hidden;aspect-ratio:1;border:1px solid var(--border);}
-.img-grid .thumb img{width:100%;height:100%;object-fit:cover;display:block;}
-.img-grid .thumb .rm{position:absolute;top:3px;right:3px;width:18px;height:18px;border-radius:5px;background:rgba(34,48,44,0.75);color:#fff;border:none;font-size:11px;cursor:pointer;line-height:1;}
-.drawer-actions{display:flex;gap:10px;margin-top:20px;}
-.btn{flex:1;padding:11px 14px;border-radius:10px;border:1px solid var(--border);background:var(--surface);font-family:inherit;font-size:13.5px;font-weight:600;cursor:pointer;color:var(--ink);}
-.btn.primary{background:var(--teal);border-color:var(--teal);color:#fff;}
-.btn.primary:hover{background:var(--teal-dark);}
-.btn:hover{background:var(--surface-2);}
-.btn.wa{background:#25D366;border-color:#25D366;color:#fff;}
-.btn.wa:hover{background:#1DA851;}
-.hint{font-size:11.5px;color:var(--ink-faint);margin-top:4px;}
-.err{font-size:12px;color:var(--coral);margin-top:4px;display:none;}
-.readonly-note{background:var(--surface-2);border-radius:9px;padding:10px 12px;font-size:12.5px;color:var(--ink-soft);margin-bottom:16px;}
-.ro-row{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);font-size:13.5px;gap:12px;}
-.ro-row:last-child{border-bottom:none;}
-.ro-row .k{color:var(--ink-soft);flex-shrink:0;}
-.ro-row .v{font-weight:500;text-align:right;}
-
-.auth-screen{min-height:100vh;display:none;align-items:center;justify-content:center;padding:24px;}
-.auth-card{background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:28px 26px;width:100%;max-width:380px;box-shadow:var(--shadow);}
-.auth-card h2{font-family:'Fraunces',serif;font-size:21px;margin:0 0 6px;font-weight:600;}
-.auth-sub{font-size:13px;color:var(--ink-soft);margin:0 0 18px;line-height:1.5;}
-.auth-links{display:flex;flex-direction:column;gap:8px;margin-top:14px;text-align:center;}
-.auth-links a{font-size:12.5px;color:var(--teal-dark);text-decoration:none;font-weight:600;}
-.auth-links a:hover{text-decoration:underline;}
-.auth-links .hint{font-size:11.5px;color:var(--ink-faint);}
-
-#toastEl{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--ink);color:#fff;padding:10px 20px;border-radius:999px;font-size:13px;z-index:100;box-shadow:var(--shadow);display:none;max-width:90vw;text-align:center;}
+:root{--bg:#FAF7F1;--surface:#FFF;--surface2:#F1EBDD;--ink:#22302C;--soft:#5B6B63;--faint:#93A099;--border:#E1D8C4;--teal:#2B5F5A;--teal2:#173A36;--coral:#B85A5F;--amber:#C87F3A;--green:#25D366;--shadow:0 4px 18px rgba(34,48,44,.08);--r:14px}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font-family:Inter,system-ui,sans-serif}.wrap{max-width:1180px;margin:auto;padding:20px 20px 80px}.top{display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:20px}.brand{display:flex;gap:12px;align-items:center}.logo{width:42px;height:42px;border-radius:10px;background:var(--teal);color:#fff;display:grid;place-items:center;font-weight:700}.brand h1{font:600 20px Fraunces;margin:0}.brand p{margin:2px 0;color:var(--soft);font-size:12px}.actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.pill,.btn{border:1px solid var(--border);background:#fff;border-radius:9px;padding:8px 12px;font:600 12px Inter;cursor:pointer}.pill{border-radius:999px;color:var(--soft)}.pill.admin{background:#E1EDEA;color:var(--teal2)}.pill.staff{background:#F6E3E1;color:#7A3A3D}.btn.primary{background:var(--teal);border-color:var(--teal);color:#fff}.btn.danger{background:var(--coral);border-color:var(--coral);color:#fff}.btn.wa{background:var(--green);border-color:var(--green);color:#fff}.btn:disabled{opacity:.5;cursor:not-allowed}.sync{font-size:12px;color:var(--soft);display:flex;align-items:center;gap:6px}.dot{width:7px;height:7px;border-radius:50%;background:var(--teal)}.dot.busy{background:var(--amber)}.card{background:#fff;border:1px solid var(--border);border-radius:var(--r);padding:18px;margin-bottom:18px;box-shadow:var(--shadow)}.props{display:flex;gap:8px;flex-wrap:wrap}.prop{border:1px solid var(--border);background:#fff;border-radius:999px;padding:9px 14px;cursor:pointer}.prop.active{background:var(--teal);color:#fff;border-color:var(--teal)}.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}.stat{padding:15px;border:1px solid var(--border);border-radius:12px;background:#fff}.stat small{display:block;text-transform:uppercase;color:var(--soft);font-size:11px}.stat strong{font:500 22px 'IBM Plex Mono';display:block;margin-top:5px}.grid7{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}.dow{text-align:center;color:var(--faint);font-size:11px;font-weight:700;padding:5px}.day{min-height:70px;border:1px solid var(--border);border-radius:9px;background:#fff;padding:6px;cursor:pointer}.day.booked{background:#E1EDEA;border-color:#BFDAD3}.day.refunded{background:#F6E3E1}.day.blocked{background:var(--surface2)}.day .n{font:12px 'IBM Plex Mono';color:var(--soft)}.day.today .n{background:var(--ink);color:#fff;padding:3px 5px;border-radius:5px}.guest{font-size:11px;margin-top:5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.listhead{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:center}.search{padding:9px 11px;border:1px solid var(--border);border-radius:9px;background:#fff}.row{display:flex;align-items:center;gap:10px;padding:11px 4px;border-bottom:1px solid var(--border);cursor:pointer}.row:last-child{border-bottom:0}.avatar{width:36px;height:36px;border-radius:9px;background:var(--surface2);display:grid;place-items:center;font-weight:700;flex-shrink:0}.main{flex:1;min-width:0}.main b{font-size:14px}.main small{display:block;color:var(--soft);font-family:'IBM Plex Mono';font-size:11px}.badge{font-size:11px;padding:4px 8px;border-radius:999px;font-weight:700}.badge.booked{background:#E1EDEA;color:var(--teal2)}.badge.cancelled{background:var(--surface2);color:var(--soft)}.badge.refunded{background:#F6E3E1;color:#7A3A3D}.empty{text-align:center;color:var(--soft);padding:30px}.overlay{position:fixed;inset:0;background:rgba(34,48,44,.45);display:none;align-items:flex-end;justify-content:center;z-index:20}.overlay.show{display:flex}.drawer{background:#fff;width:100%;max-width:560px;max-height:92vh;overflow:auto;border-radius:20px 20px 0 0}.dh{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;position:sticky;top:0;background:#fff;z-index:2}.db{padding:20px}.field{margin-bottom:13px}.field label{display:block;font-size:12px;font-weight:700;color:var(--soft);margin-bottom:5px}.field input,.field select,.field textarea{width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:9px;background:var(--bg);font:14px Inter}.two{display:grid;grid-template-columns:1fr 1fr;gap:10px}.status{display:flex;gap:7px}.status button{flex:1}.upload{border:1.5px dashed var(--border);padding:14px;border-radius:9px;text-align:center;cursor:pointer;color:var(--soft)}.thumbs{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin-top:8px}.thumb{position:relative;aspect-ratio:1;border:1px solid var(--border);border-radius:8px;overflow:hidden}.thumb img{width:100%;height:100%;object-fit:cover}.thumb button{position:absolute;right:3px;top:3px;background:#000a;color:#fff;border:0;border-radius:5px}.drawerActions{display:flex;gap:9px;margin-top:18px}.drawerActions>*{flex:1}.note{font-size:12px;color:var(--soft);background:var(--surface2);padding:10px;border-radius:9px;margin-bottom:12px}.err{color:var(--coral);font-size:12px;margin:5px 0}.staffline{font-size:11px;color:var(--soft);margin-top:3px}.login{min-height:100vh;display:grid;place-items:center;padding:20px}.loginbox{max-width:390px;width:100%;background:#fff;border:1px solid var(--border);border-radius:18px;padding:25px;box-shadow:var(--shadow)}#app{display:none}.hidden{display:none!important}@media(max-width:700px){.stats{grid-template-columns:repeat(2,1fr)}.two{grid-template-columns:1fr}.day{min-height:52px}.guest{display:none}.wrap{padding:12px}.card{padding:14px}}
 </style>
 </head>
 <body>
-
-<div class="auth-screen" id="authScreen"></div>
-
-<div class="wrap" id="mainWrap" style="display:none;">
-
-  <div class="topbar">
-    <div class="brand">
-      <div class="brand-mark">MS</div>
-      <div>
-        <h1>Booking Admin</h1>
-        <p>My Space Luxury Suite — shared across your whole team</p>
-      </div>
-    </div>
-    <div class="topbar-right">
-      <span class="role-pill" id="rolePill"></span>
-      <button class="logout-btn" id="settingsBtn" style="display:none;">Settings</button>
-      <button class="logout-btn" id="logoutBtn">Log out</button>
-      <div class="sync-pill"><span class="sync-dot" id="syncDot"></span><span id="syncText">Synced</span></div>
-    </div>
-  </div>
-
-  <div class="banner" id="storageBanner" style="display:none;">
-    This artifact isn't published yet, so bookings are only visible in this browser tab right now and will reset next time it's opened. Publish it from the artifact menu, then share the published link with your team so everyone sees the same, permanently saved data.
-  </div>
-
-  <div class="prop-row" id="propRow"></div>
-
-  <div class="stats" id="statsRow"></div>
-
-  <div class="export-card">
-    <div class="export-left">
-      <div class="ico">XL</div>
-      <div>
-        <h3>Download Excel report</h3>
-        <p>One workbook, one sheet per property, full booking detail with guest numbers.</p>
-      </div>
-    </div>
-    <div class="export-actions">
-      <button id="exportMonthBtn">Download this month</button>
-      <button id="exportAllBtn" class="primary">Download full history</button>
-    </div>
-  </div>
-
-  <div class="cal-card">
-    <div class="cal-head">
-      <h2 id="calTitle">—</h2>
-      <div class="cal-nav">
-        <button id="prevMonth">‹</button>
-        <button id="nextMonth">›</button>
-      </div>
-    </div>
-    <div class="legend">
-      <span><i style="background:var(--teal-light);border:1px solid #BFDAD3"></i>Booked</span>
-      <span><i style="background:var(--coral-light);border:1px solid #E6C3C1"></i>Refunded</span>
-      <span><i style="background:var(--surface-2);border:1px solid var(--border-strong)"></i>Blocked</span>
-      <span><i style="background:var(--surface);border:1px solid var(--border)"></i>Available</span>
-    </div>
-    <div class="grid7" id="dowRow"></div>
-    <div class="grid7" id="calGrid" style="margin-top:6px;"></div>
-  </div>
-
-  <div class="list-card">
-    <div class="list-head">
-      <h2>Bookings</h2>
-      <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
-        <input class="search-box" id="searchBox" placeholder="Search by guest name or mobile">
-        <div class="list-toggle">
-          <button id="toggleMonth" class="active">This month</button>
-          <button id="toggleAll">All history</button>
-        </div>
-      </div>
-    </div>
-    <div id="bookList"></div>
-  </div>
-
-</div>
-
-<div class="overlay" id="overlay">
-  <div class="drawer">
-    <div class="drawer-head">
-      <h3 id="drawerTitle">New booking</h3>
-      <button class="drawer-close" id="drawerClose">✕</button>
-    </div>
-    <div class="drawer-body" id="drawerBody"></div>
-  </div>
-</div>
-
-<div id="toastEl"></div>
-
+<div id="login" class="login"><div class="loginbox"><h2 style="font:600 24px Fraunces;margin:0 0 6px">Booking Admin</h2><p style="color:var(--soft);font-size:13px">My Space Luxury Suite — secure team login</p><div class="field"><label>Email</label><input id="email" type="email" autocomplete="username"></div><div class="field"><label>Password</label><input id="password" type="password" autocomplete="current-password"></div><div id="loginErr" class="err"></div><button id="loginBtn" class="btn primary" style="width:100%">Log in</button></div></div>
+<div id="app"><div class="wrap">
+<div class="top"><div class="brand"><div class="logo">MS</div><div><h1>Booking Admin</h1><p>My Space Luxury Suite — shared across your whole team</p></div></div><div class="actions"><span id="role" class="pill"></span><span class="sync"><i id="dot" class="dot"></i><span id="syncText">Synced</span></span><button id="staffBtn" class="btn">Staff</button><button id="settingsBtn" class="btn">Settings</button><button id="logout" class="btn">Log out</button></div></div>
+<div id="props" class="card"></div><div id="stats" class="stats" style="margin-bottom:18px"></div>
+<div class="card"><div class="listhead"><div><b>Excel reports</b><div style="font-size:12px;color:var(--soft)">Separate sheet for every property • full booking history</div></div><div class="actions"><button id="monthX" class="btn">This month</button><button id="allX" class="btn primary">Full history</button></div></div></div>
+<div class="card"><div class="listhead"><h2 id="monthTitle" style="font:600 20px Fraunces;margin:0"></h2><div class="actions"><button id="prev" class="btn">‹</button><button id="next" class="btn">›</button></div></div><div style="font-size:12px;color:var(--soft);margin:10px 0">🟢 Booked &nbsp; 🟠 Refunded &nbsp; ⚪ Available &nbsp; 🟤 Blocked</div><div id="dow" class="grid7"></div><div id="cal" class="grid7"></div></div>
+<div class="card"><div class="listhead"><h2 style="font:600 20px Fraunces;margin:0">Bookings</h2><div class="actions"><input id="search" class="search" placeholder="Search guest / mobile"><button id="allMode" class="btn">All history</button></div></div><div id="bookings"></div></div>
+</div></div>
+<div id="overlay" class="overlay"><div class="drawer"><div class="dh"><b id="drawerTitle">New booking</b><button id="close" class="btn">✕</button></div><div id="drawer" class="db"></div></div></div><div id="toast" style="position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#22302C;color:#fff;padding:10px 18px;border-radius:999px;display:none;z-index:50"></div>
 <script>
-/* =========================================================
-   MY SPACE LUXURY SUITE — SUPABASE CLOUD VERSION
-   UI kept from the original Airbnb-style app.
-========================================================= */
-const SUPABASE_URL = 'https://gaqzoybdlhjtvftykjxs.supabase.co';
-const SUPABASE_ANON_KEY = 'sb_publishable_VMxnlZ146Z-ufMgPSKxutA_oZJzNm3_';
-const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
-let state = {
-  properties: [], activePropertyId: null, bookings: [], blocked: [],
-  year:new Date().getFullYear(), month:new Date().getMonth(),
-  listMode:'month', search:'', editingBookingId:null, pendingImages:[],
-  authRole:null, currentUser:null, profile:null
-};
-
-function esc(v){return String(v ?? '').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'",'&#039;');}
-function fmtDate(d){const y=d.getFullYear(),m=String(d.getMonth()+1).padStart(2,'0'),day=String(d.getDate()).padStart(2,'0');return `${y}-${m}-${day}`;}
-function parseDate(s){const [y,m,d]=s.split('-').map(Number);return new Date(y,m-1,d);}
-function money(n){return '₹'+Number(n||0).toLocaleString('en-IN');}
-function initials(name){if(!name)return '?';return name.trim().split(/\s+/).slice(0,2).map(w=>w[0]).join('').toUpperCase();}
-function nights(a,b){return Math.round((parseDate(b)-parseDate(a))/86400000);}
-function toast(m){const t=document.getElementById('toastEl');t.textContent=m;t.style.display='block';clearTimeout(t._timer);t._timer=setTimeout(()=>t.style.display='none',3200);}
-function setSync(busy){document.getElementById('syncDot').className='sync-dot'+(busy?' busy':'');document.getElementById('syncText').textContent=busy?'Saving…':'Synced';}
-function activeProperty(){return state.properties.find(p=>p.id===state.activePropertyId);}
-function activePropertyName(){const p=activeProperty();return p?p.name:'';}
-function dbStatusForSave(status){return status==='booked'?'confirmed':status;}
-async function saveBookingRow(payload, existingId){
-  let res;
-  if(existingId){
-    res=await sb.from('bookings').update(payload).eq('id',existingId).select().single();
-  }else{
-    res=await sb.from('bookings').insert(payload).select().single();
-  }
-  // Older database constraint may use 'confirmed' instead of 'booked'. Retry automatically.
-  if(res.error && payload.status==='booked' && /status_check|check constraint/i.test(res.error.message||'')){
-    const retry={...payload,status:'confirmed'};
-    if(existingId) return await sb.from('bookings').update(retry).eq('id',existingId).select().single();
-    return await sb.from('bookings').insert(retry).select().single();
-  }
-  return res;
-}
-async function uploadGuestIds(bookingId, files){
-  if(!bookingId || !files || !files.length) return [];
-  const uploaded=[];
-  for(const file of Array.from(files)){
-    const safe=file.name.replace(/[^a-zA-Z0-9._-]/g,'_');
-    const path=`${bookingId}/${Date.now()}_${Math.random().toString(36).slice(2,8)}_${safe}`;
-    const up=await sb.storage.from('guest-ids').upload(path,file,{upsert:false,contentType:file.type||'application/octet-stream'});
-    if(up.error) throw up.error;
-    const ins=await sb.from('guest_documents').insert({booking_id:bookingId,file_name:file.name,storage_path:path,mime_type:file.type||'',file_size:file.size,uploaded_by:state.currentUser.id}).select().single();
-    if(ins.error) throw ins.error;
-    uploaded.push(ins.data);
-  }
-  return uploaded;
-}
-async function getGuestIdLinks(bookingId){
-  const {data,error}=await sb.from('guest_documents').select('*').eq('booking_id',bookingId).order('created_at');
-  if(error) return [];
-  const out=[];
-  for(const d of (data||[])){
-    const r=await sb.storage.from('guest-ids').createSignedUrl(d.storage_path,3600);
-    if(!r.error && r.data?.signedUrl) out.push({name:d.file_name,url:r.data.signedUrl});
-  }
-  return out;
-}
-
-/* ---------- Auth ---------- */
-function authEl(){return document.getElementById('authScreen');}
-function showApp(){document.getElementById('authScreen').style.display='none';document.getElementById('mainWrap').style.display='';const pill=document.getElementById('rolePill');pill.textContent=state.authRole==='admin'?'Admin':'Staff';pill.className='role-pill'+(state.authRole==='admin'?'':' staff');document.getElementById('settingsBtn').style.display='none';}
-function showAuth(){document.getElementById('mainWrap').style.display='none';document.getElementById('authScreen').style.display='flex';}
-function renderLogin(){
-  showAuth();
-  authEl().innerHTML=`<div class="auth-card"><h2>Sign in</h2><p class="auth-sub">Use your registered email and password.</p><div class="field"><label>Email</label><input type="email" id="li_email" autocomplete="username"></div><div class="field"><label>Password</label><input type="password" id="li_pass" autocomplete="current-password"></div><div class="err" id="li_err"></div><button class="btn primary" style="width:100%" id="li_submit">Log in</button></div>`;
-  const go=async()=>{const email=document.getElementById('li_email').value.trim(),password=document.getElementById('li_pass').value;const err=document.getElementById('li_err');if(!email||!password){err.textContent='Enter email and password.';err.style.display='block';return;}err.style.display='none';const {data,error}=await sb.auth.signInWithPassword({email,password});if(error){err.textContent=error.message;err.style.display='block';return;}await loadApp(data.user);};
-  document.getElementById('li_submit').onclick=go;document.getElementById('li_pass').addEventListener('keydown',e=>{if(e.key==='Enter')go();});
-}
-async function loadApp(user){
-  const {data,error}=await sb.from('profiles').select('*').eq('id',user.id).single();
-  if(error||!data){renderLogin();toast('Profile not found for this account.');return;}
-  state.currentUser=user;state.profile=data;state.authRole=data.role;
-  showApp();
-  document.querySelector('.brand p').textContent=(data.business_name||'My Space Luxury Suite')+' — shared across your whole team';
-  await refreshAll();
-}
-document.getElementById('logoutBtn').onclick=async()=>{await sb.auth.signOut();state={...state,authRole:null,currentUser:null,profile:null};renderLogin();};
-
-/* ---------- Cloud data ---------- */
-async function loadProperties(){
-  const {data,error}=await sb.from('properties').select('*').order('created_at',{ascending:false});
-  if(error)throw error;
-  state.properties=(data||[]).map(p=>({id:p.id,name:p.name,address:p.address||'',active:p.active!==false,archived:p.active===false}));
-  const visible=state.properties.filter(p=>p.active);
-  if(!state.activePropertyId || !visible.some(p=>p.id===state.activePropertyId))state.activePropertyId=visible[0]?.id||null;
-}
-async function loadBookings(propId){
-  if(!propId){state.bookings=[];state.blocked=[];return;}
-  setSync(true);
-  const [br,bl]=await Promise.all([
-    sb.from('bookings').select('*').eq('property_id',propId).order('created_at',{ascending:false}),
-    sb.from('blocked_dates').select('*').eq('property_id',propId).eq('blocked',true).order('blocked_date')
-  ]);
-  if(br.error)throw br.error;if(bl.error)throw bl.error;
-  state.bookings=(br.data||[]).map(b=>({
-    id:b.id,propertyId:b.property_id,guestName:b.guest_name||'',mobile:b.guest_phone||'',email:b.guest_email||'',guests:Number(b.guests||1),
-    checkIn:b.check_in,checkOut:b.check_out,price:Number(b.amount||0),discount:0,paymentMode:'',status:(b.status==='confirmed'?'booked':(b.status||'booked')),refundAmount:0,notes:b.notes||'',imageKeys:[],isBlock:false,createdAt:b.created_at||'',createdBy:b.created_by||''
-  }));
-  state.blocked=bl.data||[];
-  setSync(false);
-}
-async function refreshAll(){
-  try{setSync(true);await loadProperties();await loadBookings(state.activePropertyId);renderPropertyRow();renderStats();renderCalendar();renderList();setSync(false);}catch(e){setSync(false);console.error(e);toast(e.message||'Could not load cloud data.');}
-}
-
-/* ---------- Properties ---------- */
-function renderPropertyRow(){
-  const row=document.getElementById('propRow');row.innerHTML='';
-  state.properties.filter(p=>p.active).forEach(p=>{
-    const w=document.createElement('span');w.className='prop-chip-wrap';
-    const c=document.createElement('button');c.className='prop-chip'+(p.id===state.activePropertyId?' active':'');c.textContent=p.name;c.onclick=async()=>{state.activePropertyId=p.id;await refreshAll();};w.appendChild(c);
-    if(state.authRole==='admin' && state.properties.filter(x=>x.active).length>1){const rm=document.createElement('button');rm.className='prop-rm';rm.textContent='✕';rm.title='Archive property';rm.onclick=e=>{e.stopPropagation();confirmArchiveProperty(p);};w.appendChild(rm);}
-    row.appendChild(w);
-  });
-  if(state.authRole==='admin'){const add=document.createElement('button');add.className='prop-add';add.textContent='+ Add property';add.onclick=openAddPropertyForm;row.appendChild(add);}
-}
-function openAddPropertyForm(){
-  document.getElementById('drawerTitle').textContent='Add property';
-  document.getElementById('drawerBody').innerHTML=`<div class="field"><label>Property name</label><input id="np_name" placeholder="e.g. My Space Luxury Suite 2"></div><div class="field"><label>Location / Address</label><input id="np_address" placeholder="Location / Address"></div><div class="err" id="np_err"></div><div class="drawer-actions"><button class="btn" id="np_cancel">Cancel</button><button class="btn primary" id="np_save">Add property</button></div>`;
-  overlay.classList.add('show');document.getElementById('np_cancel').onclick=closeDrawer;
-  document.getElementById('np_save').onclick=async()=>{const name=document.getElementById('np_name').value.trim(),address=document.getElementById('np_address').value.trim(),err=document.getElementById('np_err');if(!name){err.textContent='Enter a property name.';err.style.display='block';return;}const {data,error}=await sb.from('properties').insert({name,address,active:true}).select().single();if(error){err.textContent=error.message;err.style.display='block';return;}closeDrawer();state.activePropertyId=data.id;toast('Property added');await refreshAll();};
-}
-function confirmArchiveProperty(p){
-  document.getElementById('drawerTitle').textContent='Archive property?';document.getElementById('drawerBody').innerHTML=`<p style="font-size:13.5px;color:var(--ink-soft);line-height:1.6;">This hides <strong>${esc(p.name)}</strong> from the active property list. Its booking history remains in the database.</p><div class="drawer-actions"><button class="btn" id="ar_cancel">Cancel</button><button class="btn primary" id="ar_yes" style="background:var(--coral);border-color:var(--coral);">Archive property</button></div>`;overlay.classList.add('show');document.getElementById('ar_cancel').onclick=closeDrawer;document.getElementById('ar_yes').onclick=async()=>{const {error}=await sb.from('properties').update({active:false}).eq('id',p.id);if(error){toast(error.message);return;}closeDrawer();toast('Property archived');await refreshAll();};
-}
-
-/* ---------- Calendar ---------- */
-function activeBookingsOnDate(ds){return state.bookings.filter(b=>b.status!=='cancelled'&&ds>=b.checkIn&&ds<b.checkOut);}
-function blockedOnDate(ds){return state.blocked.find(x=>x.blocked_date===ds&&x.blocked);}
-function renderStats(){
-  const prefix=`${state.year}-${String(state.month+1).padStart(2,'0')}`;const monthBookings=state.bookings.filter(b=>b.checkIn?.startsWith(prefix)&&b.status!=='cancelled');const revenue=monthBookings.reduce((s,b)=>s+Number(b.price||0),0);const days=new Date(state.year,state.month+1,0).getDate();let booked=0;for(let d=1;d<=days;d++){const ds=fmtDate(new Date(state.year,state.month,d));if(activeBookingsOnDate(ds).some(b=>!b.isBlock))booked++;}
-  document.getElementById('statsRow').innerHTML=[['Total properties',state.properties.filter(p=>p.active).length],['Bookings this month',monthBookings.length],['Revenue this month',money(revenue)],['Booked nights / '+days,booked]].map(x=>`<div class="stat-card"><div class="label">${x[0]}</div><div class="value">${x[1]}</div></div>`).join('');
-}
-function renderCalendar(){
-  const dow=document.getElementById('dowRow');dow.innerHTML='';['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].forEach(d=>{const e=document.createElement('div');e.className='dow';e.textContent=d;dow.appendChild(e);});
-  const grid=document.getElementById('calGrid');grid.innerHTML='';const first=new Date(state.year,state.month,1),start=first.getDay(),days=new Date(state.year,state.month+1,0).getDate(),today=fmtDate(new Date()),names=['January','February','March','April','May','June','July','August','September','October','November','December'];document.getElementById('calTitle').textContent=names[state.month]+' '+state.year;
-  for(let i=0;i<start;i++){const e=document.createElement('div');e.className='day empty';grid.appendChild(e);}
-  for(let d=1;d<=days;d++){const ds=fmtDate(new Date(state.year,state.month,d)),cell=document.createElement('div');cell.className='day';if(ds===today)cell.classList.add('today');const b=activeBookingsOnDate(ds)[0],blk=blockedOnDate(ds);let guest='',tags='';if(b){cell.classList.add(b.status==='refunded'?'refunded':'booked');guest=`<div class="guest">${esc(b.guestName||'Guest')}</div>`;if(b.checkIn===ds)tags+='<span class="tag">Check-in</span>';if(b.checkOut===ds)tags+='<span class="tag out">Check-out</span>';}else if(blk){cell.classList.add('blocked');guest='<div class="guest">Blocked</div>';}cell.innerHTML=`<span class="num">${d}</span>${guest}<div class="tagrow">${tags}</div>`;cell.onclick=()=>openDrawerForDate(ds);grid.appendChild(cell);}
-}
-function statusBadge(status){const map={booked:'Booked',cancelled:'Cancelled',refunded:'Refunded'};return `<span class="badge ${status}">${map[status]||status}</span>`;}
-function renderList(){
-  const el=document.getElementById('bookList');let items=state.bookings.filter(b=>!b.isBlock);if(state.listMode==='month'){const prefix=`${state.year}-${String(state.month+1).padStart(2,'0')}`;items=items.filter(b=>b.checkIn?.startsWith(prefix)||b.checkOut?.startsWith(prefix));}if(state.search.trim()){const q=state.search.trim().toLowerCase();items=items.filter(b=>(b.guestName||'').toLowerCase().includes(q)||(b.mobile||'').includes(q));}items.sort((a,b)=>String(b.checkIn).localeCompare(String(a.checkIn)));if(!items.length){el.innerHTML='<div class="empty-state"><p>No bookings found.</p></div>';return;}el.innerHTML='';items.forEach(b=>{const row=document.createElement('div');row.className='book-row';row.innerHTML=`<div class="book-avatar st-${esc(b.status)}">${esc(initials(b.guestName))}</div><div class="book-main"><div class="name">${esc(b.guestName||'No name')}</div><div class="dates">${esc(b.checkIn)} → ${esc(b.checkOut)} · ${b.guests||1} guest${(b.guests||1)>1?'s':''}</div></div>${statusBadge(b.status)}<div class="book-price">${money(b.price)}</div>`;row.onclick=()=>openDrawerForBooking(b);el.appendChild(row);});
-}
-
-document.getElementById('prevMonth').onclick=()=>{state.month--;if(state.month<0){state.month=11;state.year--;}renderStats();renderCalendar();renderList();};
-document.getElementById('nextMonth').onclick=()=>{state.month++;if(state.month>11){state.month=0;state.year++;}renderStats();renderCalendar();renderList();};
-document.getElementById('toggleMonth').onclick=()=>{state.listMode='month';document.getElementById('toggleMonth').classList.add('active');document.getElementById('toggleAll').classList.remove('active');renderList();};
-document.getElementById('toggleAll').onclick=()=>{state.listMode='all';document.getElementById('toggleAll').classList.add('active');document.getElementById('toggleMonth').classList.remove('active');renderList();};
-document.getElementById('searchBox').oninput=e=>{state.search=e.target.value;renderList();};
-
-/* ---------- Drawer / booking ---------- */
-const overlay=document.getElementById('overlay');document.getElementById('drawerClose').onclick=closeDrawer;overlay.onclick=e=>{if(e.target===overlay)closeDrawer();};function closeDrawer(){overlay.classList.remove('show');state.editingBookingId=null;state.pendingImages=[];}
-function openDrawerForDate(ds){const b=activeBookingsOnDate(ds)[0],blk=blockedOnDate(ds);if(b)return openDrawerForBooking(b);if(blk)return renderBlockedView(blk);openDateChooser(ds);}
-function openDrawerForBooking(b){if(state.authRole!=='admin')return renderReadOnlyBooking(b);openDrawerForm(b,null);}
-function openDateChooser(ds){
-  document.getElementById('drawerTitle').textContent='Choose action';document.getElementById('drawerBody').innerHTML=`<p style="font-size:13px;color:var(--ink-soft);margin-bottom:16px;">${ds} is currently available.</p><div class="drawer-actions" style="margin-top:0;"><button class="btn" id="dc_block">Block this date</button><button class="btn primary" id="dc_book">Add booking</button></div>`;overlay.classList.add('show');
-  document.getElementById('dc_book').onclick=()=>{const n=new Date(parseDate(ds));n.setDate(n.getDate()+1);openDrawerForm(null,{checkIn:ds,checkOut:fmtDate(n)});};
-  document.getElementById('dc_block').onclick=async()=>{const {error}=await sb.from('blocked_dates').upsert({property_id:state.activePropertyId,blocked_date:ds,blocked:true,created_by:state.currentUser.id},{onConflict:'property_id,blocked_date'});if(error){toast(error.message);return;}closeDrawer();toast('Date blocked');await refreshAll();};
-}
-function renderBlockedView(rec){document.getElementById('drawerTitle').textContent='Blocked date';document.getElementById('drawerBody').innerHTML=`<p style="font-size:13.5px;color:var(--ink-soft);line-height:1.6;">${esc(rec.blocked_date)} is blocked and unavailable.</p><div class="drawer-actions"><button class="btn" id="ub_close">Close</button><button class="btn primary" id="ub_unblock">Unblock this date</button></div>`;overlay.classList.add('show');document.getElementById('ub_close').onclick=closeDrawer;document.getElementById('ub_unblock').onclick=async()=>{if(state.authRole!=='admin'&&state.authRole!=='staff')return;const {error}=await sb.from('blocked_dates').update({blocked:false}).eq('property_id',state.activePropertyId).eq('blocked_date',rec.blocked_date);if(error){toast(error.message);return;}closeDrawer();toast('Date unblocked');await refreshAll();};}
-function renderReadOnlyBooking(b){document.getElementById('drawerTitle').textContent='Booking details';document.getElementById('drawerBody').innerHTML=`<div class="readonly-note">You're signed in as staff. Existing bookings are read-only. Only an admin can edit or cancel an existing booking.</div><div class="ro-row"><span class="k">Guest name</span><span class="v">${esc(b.guestName)||'—'}</span></div><div class="ro-row"><span class="k">Mobile</span><span class="v">${esc(b.mobile)||'—'}</span></div><div class="ro-row"><span class="k">Guests</span><span class="v">${b.guests||1}</span></div><div class="ro-row"><span class="k">Check-in</span><span class="v">${esc(b.checkIn)}</span></div><div class="ro-row"><span class="k">Check-out</span><span class="v">${esc(b.checkOut)}</span></div><div class="ro-row"><span class="k">Amount</span><span class="v">${money(b.price)}</span></div><div class="ro-row"><span class="k">Status</span><span class="v">${statusBadge(b.status)}</span></div>${b.notes?`<div class="ro-row"><span class="k">Notes</span><span class="v">${esc(b.notes)}</span></div>`:''}<div class="drawer-actions"><button class="btn primary" id="ro_close">Close</button></div>`;overlay.classList.add('show');document.getElementById('ro_close').onclick=closeDrawer;}
-
-function openDrawerForm(existing,prefill){
-  state.editingBookingId=existing?.id||null;
-  document.getElementById('drawerTitle').textContent=existing?'Booking details':'New booking';
-  const b=existing||{id:null,guestName:'',mobile:'',guests:1,checkIn:prefill.checkIn,checkOut:prefill.checkOut,price:'',discount:0,paymentMode:'',status:'booked',refundAmount:0,notes:''};
-  document.getElementById('drawerBody').innerHTML=`
-    <div class="field"><label>Guest name</label><input id="f_name" value="${esc(b.guestName)}" placeholder="Full name"></div>
-    <div class="row2"><div class="field"><label>Mobile number</label><input type="tel" id="f_mobile" value="${esc(b.mobile)}" placeholder="10-digit number"></div><div class="field"><label>Number of guests</label><input type="number" min="1" id="f_guests" value="${b.guests||1}"></div></div>
-    <div class="row2"><div class="field"><label>Check-in date</label><input type="date" id="f_checkin" value="${esc(b.checkIn)}"></div><div class="field"><label>Check-out date</label><input type="date" id="f_checkout" value="${esc(b.checkOut)}"></div></div>
-    <div class="err" id="dateErr">Check-out must be after check-in.</div>
-    <div class="field"><label>Amount (₹)</label><input type="number" min="0" id="f_price" value="${b.price||''}" placeholder="0"></div>
-    <div class="field"><label>Payment mode</label><select id="f_pay"><option value="">Not specified</option><option>GPay</option><option>Bank Transfer</option><option>Cash</option><option>Cheque</option><option>Other</option></select></div>
-    <div class="field"><label>Status</label><div class="status-picker" id="statusPicker"><button type="button" class="sel-booked ${b.status==='booked'?'active':''}" data-v="booked">Booked</button><button type="button" class="sel-cancelled ${b.status==='cancelled'?'active':''}" data-v="cancelled">Cancelled</button><button type="button" class="sel-refunded ${b.status==='refunded'?'active':''}" data-v="refunded">Refunded</button></div></div>
-    <div class="field" id="refundField" style="display:${b.status==='refunded'?'block':'none'}"><label>Refund amount (₹)</label><input type="number" id="f_refund" value="${b.refundAmount||''}"></div>
-    <div class="field"><label>Guest ID / Documents <span style="font-weight:400;color:var(--ink-faint)">(multiple files allowed)</span></label><input id="f_id_files" type="file" multiple accept="image/*,.pdf"><div id="idFileHint" style="font-size:11.5px;color:var(--ink-faint);margin-top:6px">Upload Aadhaar, passport, driving licence etc. You can select unlimited documents.</div></div>
-    <div class="field"><label>Note</label><textarea id="f_notes" rows="3" placeholder="Any extra detail...">${esc(b.notes)}</textarea></div>
-    <div class="drawer-actions"><button class="btn" id="cancelBtn">Close</button><button class="btn primary" id="saveBtn">Save booking</button></div>`;
-  overlay.classList.add('show');
-  let currentStatus=b.status||'booked';
-  document.querySelectorAll('#statusPicker button').forEach(btn=>btn.onclick=()=>{currentStatus=btn.dataset.v;document.querySelectorAll('#statusPicker button').forEach(x=>x.classList.remove('active'));btn.classList.add('active');document.getElementById('refundField').style.display=currentStatus==='refunded'?'block':'none';});
-  document.getElementById('f_pay').value=b.paymentMode||'';
-  document.getElementById('cancelBtn').onclick=closeDrawer;
-  document.getElementById('saveBtn').onclick=async()=>{
-    const saveBtn=document.getElementById('saveBtn');
-    const name=document.getElementById('f_name').value.trim(),ci=document.getElementById('f_checkin').value,co=document.getElementById('f_checkout').value;
-    if(!name||!ci||!co||co<=ci){document.getElementById('dateErr').style.display='block';return;}
-    document.getElementById('dateErr').style.display='none';saveBtn.disabled=true;saveBtn.textContent='Saving…';setSync(true);
-    try{
-      const files=document.getElementById('f_id_files')?.files;
-      const payload={property_id:state.activePropertyId,guest_name:name,guest_phone:document.getElementById('f_mobile').value.trim(),guest_email:'',check_in:ci,check_out:co,guests:Number(document.getElementById('f_guests').value)||1,amount:Number(document.getElementById('f_price').value)||0,status:currentStatus,notes:document.getElementById('f_notes').value.trim(),created_by:state.currentUser.id};
-      const result=await saveBookingRow(payload,existing?.id||null);
-      if(result.error) throw result.error;
-      const saved=result.data;
-      let idCount=0;
-      if(files && files.length && saved?.id){
-        try{idCount=(await uploadGuestIds(saved.id,files)).length;}catch(e){toast('Booking saved, but ID upload failed: '+(e.message||e));}
-      }
-      closeDrawer();toast(existing?'Booking updated':'Booking saved');await refreshAll();
-      if(!existing||currentStatus==='booked'){
-        const fake={...b,...payload,id:saved?.id,propertyId:state.activePropertyId,guestName:name,mobile:payload.guest_phone,checkIn:ci,checkOut:co,price:payload.amount,guests:payload.guests,status:currentStatus,idCount};
-        showSaveConfirmation(fake,!existing);
-      }
-    }catch(e){console.error(e);toast(e.message||'Could not save booking.');}
-    finally{setSync(false);saveBtn.disabled=false;saveBtn.textContent='Save booking';}
-  };
-}
-function showSaveConfirmation(b,isNew){
-  const amount=Number(b.price||0),prop=activePropertyName();
-  document.getElementById('drawerTitle').textContent=isNew?'Booking saved':'Booking updated';
-  document.getElementById('drawerBody').innerHTML=`<p style="font-size:13.5px;color:var(--ink-soft);line-height:1.6;">${esc(b.guestName)}'s booking is saved for ${esc(prop)}.</p><p style="font-size:12px;color:var(--ink-faint);">${b.idCount?b.idCount+' guest ID/document(s) uploaded.':'No guest ID uploaded.'}</p><div class="drawer-actions"><button class="btn" id="conf_close">Done</button><button class="btn wa" id="conf_wa">Send booking details on WhatsApp</button></div>`;
-  overlay.classList.add('show');
-  document.getElementById('conf_close').onclick=async()=>{closeDrawer();await refreshAll();};
-  document.getElementById('conf_wa').onclick=()=>window.open(buildWhatsAppLink(b,prop,amount),'_blank');
-}
-function buildWhatsAppLink(b,prop,amount){const n='919041068105';const lines=[`New booking received — ${b.guestName}`,`Property: ${prop}`,`Guest mobile: ${b.mobile||'—'}`,`Guests: ${b.guests}`,`Check-in: ${b.checkIn}`,`Check-out: ${b.checkOut}`,`Amount: ${money(amount)}`,`Status: ${b.status||'booked'}`,b.notes?`Note: ${b.notes}`:''];return `https://wa.me/${n}?text=${encodeURIComponent(lines.filter(Boolean).join('\n'))}`;}
-
-/* ---------- Excel ---------- */
-function safeSheetName(n){n=(n||'Property').replace(/[\\\/\?\*\[\]:]/g,' ').trim().slice(0,31);return n||'Property';}
-function buildRow(b,p){return {'Property':p,'Guest name':b.guestName||'','Mobile number':b.mobile||'','Guests':b.guests||1,'Check-in':b.checkIn||'','Check-out':b.checkOut||'','Nights':b.checkIn&&b.checkOut?nights(b.checkIn,b.checkOut):'','Amount (₹)':Number(b.price)||0,'Status':b.status||'','Notes':b.notes||'','Saved on':(b.createdAt||'').slice(0,10)}}
-async function exportWorkbook(monthOnly){const btn=monthOnly?document.getElementById('exportMonthBtn'):document.getElementById('exportAllBtn');const old=btn.textContent;btn.textContent='Preparing…';btn.disabled=true;try{const wb=XLSX.utils.book_new();const prefix=`${state.year}-${String(state.month+1).padStart(2,'0')}`;for(const p of state.properties.filter(x=>x.active)){const {data,error}=await sb.from('bookings').select('*').eq('property_id',p.id).order('created_at',{ascending:false});if(error)throw error;let rows=(data||[]).map(b=>({guestName:b.guest_name,mobile:b.guest_phone,guests:b.guests,checkIn:b.check_in,checkOut:b.check_out,price:b.amount,status:b.status,notes:b.notes,createdAt:b.created_at}));if(monthOnly)rows=rows.filter(b=>b.checkIn?.startsWith(prefix)||b.checkOut?.startsWith(prefix));const ws=XLSX.utils.json_to_sheet(rows.length?rows.map(b=>buildRow(b,p.name)):[{'Property':p.name,'Guest name':'No bookings yet'}]);XLSX.utils.book_append_sheet(wb,ws,safeSheetName(p.name));}XLSX.writeFile(wb,monthOnly?`Bookings ${prefix}.xlsx`:`Bookings full history ${fmtDate(new Date())}.xlsx`);}catch(e){toast(e.message||'Could not build Excel.');}finally{btn.textContent=old;btn.disabled=false;}}
-document.getElementById('exportMonthBtn').onclick=()=>exportWorkbook(true);document.getElementById('exportAllBtn').onclick=()=>exportWorkbook(false);
-
-/* ---------- Start ---------- */
-(async()=>{const {data}=await sb.auth.getSession();if(data.session)await loadApp(data.session.user);else renderLogin();sb.auth.onAuthStateChange(async(event,session)=>{if(event==='SIGNED_OUT')renderLogin();});})();
+const CONFIG={SUPABASE_URL:'https://keqvrekqrfnesgirbyln.supabase.co',SUPABASE_KEY:'sb_publishable_prDBBbsj78fGEk5vzLg97A_hF6ReJFL',COMPANY_WHATSAPP:'+919041068105'};
+const sb=supabase.createClient(CONFIG.SUPABASE_URL,CONFIG.SUPABASE_KEY);
+let user=null,profile=null,properties=[],activePropertyId=null,bookings=[],year=new Date().getFullYear(),month=new Date().getMonth(),search='',showAll=false,channel=null,pendingFiles=[];
+const $=id=>document.getElementById(id), esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const date=s=>{const [y,m,d]=s.split('-').map(Number);return new Date(y,m-1,d)}, fmt=d=>d.toISOString().slice(0,10), money=n=>'₹'+Number(n||0).toLocaleString('en-IN');
+function toast(t){$('toast').textContent=t;$('toast').style.display='block';clearTimeout(toast.t);toast.t=setTimeout(()=>$('toast').style.display='none',3000)}
+function sync(b){$('dot').className='dot'+(b?' busy':'');$('syncText').textContent=b?'Saving…':'Synced'}
+function admin(){return profile?.role==='admin'}
+function prop(){return properties.find(p=>p.id===activePropertyId)}
+function nights(a,b){return Math.round((date(b)-date(a))/86400000)}
+function badge(s){return `<span class="badge ${s}">${s==='booked'?'Booked':s==='refunded'?'Refunded':'Cancelled'}</span>`}
+async function loadProfile(){const r=await sb.from('profiles').select('*').eq('id',user.id).single();if(r.error)throw r.error;profile=r.data}
+async function loadProperties(){const r=await sb.from('properties').select('*').order('created_at');if(r.error)throw r.error;properties=r.data||[];if(!activePropertyId||!properties.some(p=>p.id===activePropertyId&&!p.archived))activePropertyId=properties.find(p=>!p.archived)?.id||null}
+async function loadBookings(){if(!activePropertyId){bookings=[];return}sync(true);const r=await sb.from('bookings').select('*').eq('property_id',activePropertyId).order('check_in');if(r.error)throw r.error;bookings=r.data||[];sync(false)}
+function normalize(b){return {id:b.id,propertyId:b.property_id,guestName:b.guest_name||'',mobile:b.guest_phone??b.mobile??'',guests:Number(b.guests)||1,checkIn:b.check_in,checkOut:b.check_out,price:Number(b.amount??b.price??0),discount:Number(b.discount||0),paymentMode:b.payment_mode||'',status:b.status==='confirmed'?'booked':(b.status||'booked'),refundAmount:Number(b.refund_amount||0),notes:b.notes||'',createdBy:b.created_by,staffId:b.staff_id||'',staffName:b.staff_name||'',isBlock:!!b.is_block,createdAt:b.created_at}}
+function activeOn(ds){return bookings.map(normalize).filter(b=>!b.isBlock&&b.status!=='cancelled'&&ds>=b.checkIn&&ds<b.checkOut)}
+function blockedOn(ds){return bookings.map(normalize).find(b=>b.isBlock&&b.status!=='cancelled'&&ds>=b.checkIn&&ds<b.checkOut)}
+function render(){renderProps();renderStats();renderCalendar();renderBookings()}
+function renderProps(){$('props').innerHTML=properties.filter(p=>!p.archived).map(p=>`<button class="prop ${p.id===activePropertyId?'active':''}" data-p="${p.id}">${esc(p.name)}</button>`).join('')+(admin()?'<button id="addProp" class="prop">+ Add property</button>':'');$('props').querySelectorAll('[data-p]').forEach(b=>b.onclick=async()=>{activePropertyId=b.dataset.p;await loadBookings();render()});if(admin())$('addProp').onclick=addProperty}
+function renderStats(){const prefix=`${year}-${String(month+1).padStart(2,'0')}`;const bs=bookings.map(normalize).filter(b=>!b.isBlock&&b.status!=='cancelled'&&b.checkIn.startsWith(prefix));const revenue=bs.reduce((s,b)=>s+b.price-b.discount-(b.status==='refunded'?b.refundAmount:0),0);const days=new Date(year,month+1,0).getDate();let booked=0;for(let d=1;d<=days;d++){if(activeOn(fmt(new Date(year,month,d))).length)booked++}$('stats').innerHTML=[['Properties',properties.filter(p=>!p.archived).length],['Bookings this month',bs.length],['Revenue this month',money(revenue)],['Booked nights / '+days,booked]].map(x=>`<div class="stat"><small>${x[0]}</small><strong>${x[1]}</strong></div>`).join('')}
+function renderCalendar(){const names=['January','February','March','April','May','June','July','August','September','October','November','December'];$('monthTitle').textContent=`${names[month]} ${year}`;$('dow').innerHTML=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].map(x=>`<div class="dow">${x}</div>`).join('');let h='';const first=new Date(year,month,1).getDay(),days=new Date(year,month+1,0).getDate(),today=fmt(new Date());for(let i=0;i<first;i++)h+='<div></div>';for(let d=1;d<=days;d++){const ds=fmt(new Date(year,month,d)),a=activeOn(ds),bl=blockedOn(ds);let cls='day',guest='';if(bl)cls+=' blocked';else if(a.length){cls+=a[0].status==='refunded'?' refunded':' booked';guest=`<div class="guest">${esc(a[0].guestName)}</div>`}h+=`<div class="${cls}" data-date="${ds}"><span class="n">${d}</span>${guest}</div>`}$('cal').innerHTML=h;$('cal').querySelectorAll('[data-date]').forEach(c=>c.onclick=()=>openDate(c.dataset.date))}
+function renderBookings(){let arr=bookings.map(normalize).filter(b=>!b.isBlock);if(!showAll){const p=`${year}-${String(month+1).padStart(2,'0')}`;arr=arr.filter(b=>b.checkIn.startsWith(p)||b.checkOut.startsWith(p))}if(search){const q=search.toLowerCase();arr=arr.filter(b=>(b.guestName+' '+b.mobile+' '+b.staffName+' '+b.staffId).toLowerCase().includes(q))}arr.sort((a,b)=>b.checkIn.localeCompare(a.checkIn));$('bookings').innerHTML=arr.length?arr.map(b=>`<div class="row" data-id="${b.id}"><div class="avatar">${esc((b.guestName||'?').slice(0,2).toUpperCase())}</div><div class="main"><b>${esc(b.guestName)}</b><small>${b.checkIn} → ${b.checkOut} • ${b.guests} guest${b.guests>1?'s':''} • ${esc(b.mobile)}</small><div class="staffline">Booked by: ${esc(b.staffName||b.staffId||b.createdBy||'—')}</div></div>${badge(b.status)}<b>${money(b.price-b.discount)}</b></div>`).join(''):'<div class="empty">No bookings found.</div>';$('bookings').querySelectorAll('[data-id]').forEach(r=>r.onclick=()=>openBooking(arr.find(x=>x.id===r.dataset.id)))}
+function form(existing,prefill){pendingFiles=[];const b=existing||{guestName:'',mobile:'',guests:1,checkIn:prefill,paymentMode:'GPay',status:'booked',price:0,discount:0,notes:''};$('drawerTitle').textContent=existing?'Booking details':'New booking';$('drawer').innerHTML=`${!admin()&&existing?'<div class="note">Staff can view an existing booking but cannot edit or cancel it.</div>':''}<div class="field"><label>Guest name</label><input id="f_name" value="${esc(b.guestName)}"></div><div class="two"><div class="field"><label>Mobile number</label><input id="f_mobile" value="${esc(b.mobile)}"></div><div class="field"><label>Number of guests</label><input id="f_guests" type="number" min="1" value="${b.guests||1}"></div></div><div class="two"><div class="field"><label>Check-in</label><input id="f_in" type="date" value="${b.checkIn||prefill}"></div><div class="field"><label>Check-out</label><input id="f_out" type="date" value="${b.checkOut||''}"></div></div><div class="two"><div class="field"><label>Amount (₹)</label><input id="f_price" type="number" value="${b.price||0}"></div><div class="field"><label>Discount (₹)</label><input id="f_discount" type="number" value="${b.discount||0}"></div></div><div class="field"><label>Payment mode</label><select id="f_pay">${['GPay','Bank Transfer','Cash','Cheque','Other'].map(x=>`<option ${x===b.paymentMode?'selected':''}>${x}</option>`).join('')}</select></div><div class="field"><label>Status</label><div class="status">${['booked','cancelled','refunded'].map(s=>`<button class="btn ${b.status===s?'primary':''}" data-st="${s}">${s[0].toUpperCase()+s.slice(1)}</button>`).join('')}</div></div><div class="field"><label>Guest ID / documents — unlimited</label><div id="upload" class="upload">Choose ID photos/files</div><input id="files" type="file" multiple accept="image/*,.pdf" hidden><div id="thumbs" class="thumbs"></div></div><div class="field"><label>Note</label><textarea id="f_notes" rows="3">${esc(b.notes)}</textarea></div><div id="formErr" class="err"></div><div class="drawerActions"><button id="cancel" class="btn">Close</button>${admin()||!existing?'<button id="save" class="btn primary">Save booking</button>':''}</div>`;if(!admin()&&existing){$('cancel').onclick=closeDrawer;return}let status=b.status;$('drawer').querySelectorAll('[data-st]').forEach(x=>x.onclick=()=>{status=x.dataset.st;$('drawer').querySelectorAll('[data-st]').forEach(y=>y.classList.remove('primary'));x.classList.add('primary')});$('upload').onclick=()=>$('files').click();$('files').onchange=e=>{pendingFiles.push(...Array.from(e.target.files));$('thumbs').innerHTML=pendingFiles.map(f=>`<div class="thumb" title="${esc(f.name)}"><span style="padding:5px;font-size:11px">${esc(f.name.slice(0,18))}</span></div>`).join('')};$('cancel').onclick=closeDrawer;$('save').onclick=()=>saveBooking(existing,status)}
+function openDate(ds){const a=activeOn(ds)[0],bl=blockedOn(ds);if(a)return openBooking(a);if(bl)return openBlock(bl);$('drawerTitle').textContent='Choose action';$('drawer').innerHTML=`<div class="note">${ds} is currently available.</div><div class="drawerActions"><button id="bookDate" class="btn primary">Add booking</button><button id="blockDate" class="btn">Block this date</button></div>`;openDrawer();$('bookDate').onclick=()=>{const n=new Date(date(ds));n.setDate(n.getDate()+1);closeDrawer();form(null,ds);$('f_out').value=fmt(n);openDrawer()};$('blockDate').onclick=()=>blockDate(ds)}
+async function blockDate(ds){if(!admin())return toast('Only admin can block a date');const n=new Date(date(ds));n.setDate(n.getDate()+1);const r=await sb.from('blocked_dates').insert({property_id:activePropertyId,blocked_date:ds,blocked:true,created_by:user.id}).select().single();if(r.error)return toast(r.error.message);closeDrawer();await loadBookings();render();toast('Date blocked')}
+function openBooking(b){form(b);openDrawer()}
+function openBlock(b){$('drawerTitle').textContent='Blocked date';$('drawer').innerHTML=`<div class="note">${b.checkIn} is blocked/unavailable.</div><div class="drawerActions"><button id="unblock" class="btn primary">Unblock</button><button id="x" class="btn">Close</button></div>`;openDrawer();$('x').onclick=closeDrawer;$('unblock').onclick=async()=>{if(!admin())return toast('Only admin can unblock dates');const {error}=await sb.from('blocked_dates').delete().eq('id',b.id);if(error)return toast(error.message);closeDrawer();await loadBookings();render();toast('Date unblocked')}}
+function openDrawer(){$('overlay').classList.add('show')}function closeDrawer(){$('overlay').classList.remove('show')}
+async function saveBooking(existing,status){const name=$('f_name').value.trim(),ci=$('f_in').value,co=$('f_out').value;if(!name||!ci||!co||co<=ci)return $('formErr').textContent='Enter guest name and valid dates.';if(!activePropertyId)return toast('Select a property');const overlap=bookings.map(normalize).find(b=>!b.isBlock&&b.status!=='cancelled'&&b.id!==(existing?.id)&&ci<b.checkOut&&co>b.checkIn);if(overlap)return $('formErr').textContent=`Dates already booked by ${overlap.guestName}.`;sync(true);const row={property_id:activePropertyId,guest_name:name,guest_phone:$('f_mobile').value.trim(),guests:Number($('f_guests').value)||1,check_in:ci,check_out:co,amount:Number($('f_price').value)||0,status:status==='booked'?'booked':status,notes:$('f_notes').value.trim(),created_by:user.id,staff_id:profile?.staff_id||null,staff_name:profile?.full_name||user.email,discount:Number($('f_discount').value)||0,payment_mode:$('f_pay').value,refund_amount:0,is_block:false};let r=existing?await sb.from('bookings').update(row).eq('id',existing.id).select().single():await sb.from('bookings').insert(row).select().single();if(r.error){sync(false);return $('formErr').textContent=r.error.message}const saved=normalize(r.data);if(pendingFiles.length){toast('Booking saved; uploading IDs…');for(const f of pendingFiles){const path=`${user.id}/${saved.id}/${Date.now()}_${Math.random().toString(36).slice(2)}_${f.name.replace(/[^a-zA-Z0-9._-]/g,'_')}`;const up=await sb.storage.from('guest-ids').upload(path,f,{upsert:false});if(!up.error)await sb.from('booking_files').insert({booking_id:saved.id,property_id:activePropertyId,storage_path:path,file_name:f.name,mime_type:f.type,size_bytes:f.size,created_by:user.id})}}sync(false);closeDrawer();await loadBookings();render();toast(existing?'Booking updated':'Booking saved');if(saved.status==='booked'&&saved.mobile)window.open(guestWhatsApp(saved),'_blank')}
+function guestWhatsApp(b){let n=b.mobile.replace(/\D/g,'');if(n.length===10)n='91'+n;const p=prop()?.name||'';const text=[`Hello ${b.guestName}, greetings from My Space Luxury Suite!`,'',`Your booking at ${p} is confirmed.`,`Check-in: ${b.checkIn}`,`Check-out: ${b.checkOut}`,`Guests: ${b.guests}`,`Amount: ${money(b.price-b.discount)}`,`Payment: ${b.paymentMode||'—'}`,'',`Thank you for choosing us!`].join('\n');return `https://wa.me/${n}?text=${encodeURIComponent(text)}`}
+async function addProperty(){if(!admin())return;const name=prompt('Property name?');if(!name)return;const address=prompt('Location / Address?')||'';const r=await sb.from('properties').insert({name,address,active:true,archived:false}).select().single();if(r.error)return toast(r.error.message);await loadProperties();render();toast('Property added')}
+async function staffPanel(){if(!admin())return;const r=await sb.from('profiles').select('id,full_name,role,business_name,staff_id').order('created_at');if(r.error)return toast(r.error.message);$('drawerTitle').textContent='Staff members';$('drawer').innerHTML=`<div class="note">Create the staff user's Supabase Auth account in Supabase Authentication → Users. Then add the same user's UUID here as the profile ID.</div><div class="field"><label>Auth User UUID</label><input id="s_id" placeholder="UUID from Authentication → Users"></div><div class="field"><label>Staff name</label><input id="s_name"></div><div class="field"><label>Staff ID</label><input id="s_staff" placeholder="e.g. ST-001"></div><div class="field"><label>Role</label><select id="s_role"><option value="staff">Staff</option><option value="admin">Admin</option></select></div><div id="staffErr" class="err"></div><button id="addStaff" class="btn primary" style="width:100%">Save staff profile</button><hr style="border:0;border-top:1px solid var(--border);margin:18px 0"><div>${r.data.map(x=>`<div class="row"><div class="main"><b>${esc(x.full_name||'Unnamed')}</b><small>${esc(x.staff_id||'No Staff ID')} • ${esc(x.role)}</small></div></div>`).join('')||'<div class="empty">No staff profiles.</div>'}</div>`;openDrawer();$('addStaff').onclick=async()=>{const id=$('s_id').value.trim(),name=$('s_name').value.trim(),sid=$('s_staff').value.trim();if(!id||!name||!sid)return $('staffErr').textContent='Enter UUID, name and Staff ID.';const x=await sb.from('profiles').upsert({id,full_name:name,staff_id:sid,role:$('s_role').value}).select().single();if(x.error)return $('staffErr').textContent=x.error.message;closeDrawer();toast('Staff profile saved')}}
+async function settings(){if(!admin())return;const p=profile||{};$('drawerTitle').textContent='Admin settings';$('drawer').innerHTML=`<div class="field"><label>Business name</label><input id="biz" value="${esc(p.business_name||'My Space Luxury Suite')}"></div><div class="note">Company WhatsApp number: ${CONFIG.COMPANY_WHATSAPP}</div><button id="saveSet" class="btn primary" style="width:100%">Save</button>`;openDrawer();$('saveSet').onclick=async()=>{const r=await sb.from('profiles').update({business_name:$('biz').value.trim()}).eq('id',user.id);if(r.error)return toast(r.error.message);profile.business_name=$('biz').value.trim();closeDrawer();toast('Settings saved')}}
+function buildRows(arr,p){return arr.map(b=>({'Property':p.name,'Guest name':b.guestName,'Mobile':b.mobile,'Guests':b.guests,'Check-in':b.checkIn,'Check-out':b.checkOut,'Nights':nights(b.checkIn,b.checkOut),'Amount':b.price,'Discount':b.discount,'Payable':b.price-b.discount,'Payment mode':b.paymentMode,'Status':b.status,'Staff ID':b.staffId,'Staff name':b.staffName,'Created by UUID':b.createdBy,'Notes':b.notes,'Created':b.createdAt}));}
+async function exportExcel(monthOnly){const wb=XLSX.utils.book_new();for(const p of properties.filter(x=>!x.archived)){const r=await sb.from('bookings').select('*').eq('property_id',p.id).order('check_in');if(r.error)return toast(r.error.message);let arr=(r.data||[]).map(normalize).filter(b=>!b.isBlock);if(monthOnly){const pre=`${year}-${String(month+1).padStart(2,'0')}`;arr=arr.filter(b=>b.checkIn.startsWith(pre)||b.checkOut.startsWith(pre))}const ws=XLSX.utils.json_to_sheet(buildRows(arr,p));XLSX.utils.book_append_sheet(wb,ws,(p.name||'Property').replace(/[\\/?*\[\]:]/g,' ').slice(0,31)||'Property')}XLSX.writeFile(wb,monthOnly?`Bookings-${year}-${String(month+1).padStart(2,'0')}.xlsx`:`Bookings-Full-History.xlsx`)}
+$('prev').onclick=()=>{month--;if(month<0){month=11;year--}render()};$('next').onclick=()=>{month++;if(month>11){month=0;year++}render()};$('search').oninput=e=>{search=e.target.value;renderBookings()};$('allMode').onclick=()=>{showAll=!showAll;$('allMode').textContent=showAll?'This month':'All history';renderBookings()};$('monthX').onclick=()=>exportExcel(true);$('allX').onclick=()=>exportExcel(false);$('staffBtn').onclick=staffPanel;$('settingsBtn').onclick=settings;$('close').onclick=closeDrawer;$('overlay').onclick=e=>{if(e.target===$('overlay'))closeDrawer()};$('logout').onclick=async()=>{await sb.auth.signOut();location.reload()};$('loginBtn').onclick=login;$('password').onkeydown=e=>{if(e.key==='Enter')login()};
+async function login(){const email=$('email').value.trim(),password=$('password').value;if(!email||!password)return;$('loginErr').textContent='';const r=await sb.auth.signInWithPassword({email,password});if(r.error)return $('loginErr').textContent=r.error.message;user=r.data.user;try{await loadProfile()}catch(e){$('loginErr').textContent='Login worked, but no profile exists for this user.';await sb.auth.signOut();return}await start()}
+async function start(){if(channel)sb.removeChannel(channel);$('login').style.display='none';$('app').style.display='block';$('role').textContent=admin()?'Admin':'Staff';$('role').className='pill '+(admin()?'admin':'staff');$('staffBtn').style.display=admin()?'inline-block':'none';$('settingsBtn').style.display=admin()?'inline-block':'none';try{await loadProperties();await loadBookings();render()}catch(e){toast(e.message)}channel=sb.channel('booking-sync').on('postgres_changes',{event:'*',schema:'public',table:'bookings'},async()=>{try{await loadBookings();render()}catch(e){}}).on('postgres_changes',{event:'*',schema:'public',table:'properties'},async()=>{try{await loadProperties();await loadBookings();render()}catch(e){}}).subscribe();setInterval(async()=>{try{await loadBookings();render()}catch(e){}},15000)}
+(async()=>{const r=await sb.auth.getSession();if(r.data.session){user=r.data.session.user;try{await loadProfile();await start()}catch(e){}}})();
 </script>
-</body>
-</html>
+</body></html>
