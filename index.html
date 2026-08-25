@@ -44,19 +44,45 @@ function renderStats(){const prefix=`${year}-${String(month+1).padStart(2,'0')}`
 function renderCalendar(){const names=['January','February','March','April','May','June','July','August','September','October','November','December'];$('monthTitle').textContent=`${names[month]} ${year}`;$('dow').innerHTML=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].map(x=>`<div class="dow">${x}</div>`).join('');let h='';const first=new Date(year,month,1).getDay(),days=new Date(year,month+1,0).getDate(),today=fmt(new Date());for(let i=0;i<first;i++)h+='<div></div>';for(let d=1;d<=days;d++){const ds=fmt(new Date(year,month,d)),a=activeOn(ds),bl=blockedOn(ds);let cls='day'+(ds===today?' today':''),guest='';if(bl)cls+=' blocked';else if(a.length){cls+=a[0].status==='refunded'?' refunded':' booked';guest=`<div class="guest">${esc(a[0].guestName)}<br><span style="font-weight:500">${esc(a[0].staffId||a[0].staffName||'')}</span></div>`}h+=`<div class="${cls}" data-date="${ds}"><span class="n">${d}</span>${guest}</div>`}$('cal').innerHTML=h;$('cal').querySelectorAll('[data-date]').forEach(c=>c.onclick=()=>openDate(c.dataset.date))}
 function renderBookings(){let arr=bookings.map(normalize).filter(b=>!b.isBlock);if(!showAll){const p=`${year}-${String(month+1).padStart(2,'0')}`;arr=arr.filter(b=>b.checkIn?.startsWith(p)||b.checkOut?.startsWith(p))}if(search){const q=search.toLowerCase();arr=arr.filter(b=>(b.guestName+' '+b.mobile+' '+b.staffName+' '+b.staffId).toLowerCase().includes(q))}arr.sort((a,b)=>String(b.checkIn).localeCompare(String(a.checkIn)));$('bookings').innerHTML=arr.length?arr.map(b=>`<div class="row"><div class="avatar">${esc((b.guestName||'?').slice(0,2).toUpperCase())}</div><div class="main"><b>${esc(b.guestName)}</b><small>${b.checkIn} → ${b.checkOut} • ${b.guests} guest${b.guests>1?'s':''} • ${esc(b.mobile)}</small><div class="staffline">Booked by: <b>${esc(b.staffId||b.staffName||b.createdBy||'—')}</b>${b.staffName?' — '+esc(b.staffName):''}</div></div><span class="badge ${b.status}">${b.status}</span><div class="actions"><button class="btn" data-view="${b.id}">View</button>${b.mobile?`<button class="btn wa" data-wa="${b.id}">WhatsApp</button>`:''}</div></div>`).join(''):'<div class="empty">No bookings found.</div>'; $('bookings').querySelectorAll('[data-view]').forEach(x=>x.onclick=()=>openBooking(arr.find(b=>b.id===x.dataset.view)));$('bookings').querySelectorAll('[data-wa]').forEach(x=>x.onclick=()=>window.open(guestWhatsApp(arr.find(b=>b.id===x.dataset.wa)),'_blank'))}
 function openDrawer(){$('overlay').classList.add('show')}function closeDrawer(){$('overlay').classList.remove('show')}
-function form(existing,prefill){pendingFiles=[];const b=existing||{guestName:'',mobile:'',guests:1,checkIn:prefill,checkOut:'',price:0,discount:0,paymentMode:'GPay',status:'booked',notes:''};$('drawerTitle').textContent=existing?'Booking details':'New booking';$('drawer').innerHTML=`${existing?`<div class="note">Booked by: <b>${esc(b.staffId||b.staffName||b.createdBy||'—')}</b>${b.staffName?' — '+esc(b.staffName):''}</div>`:''}<div class="field"><label>Guest name</label><input id="f_name" value="${esc(b.guestName)}"></div><div class="two"><div class="field"><label>Mobile number</label><input id="f_mobile" value="${esc(b.mobile)}"></div><div class="field"><label>Number of guests</label><input id="f_guests" type="number" min="1" value="${b.guests||1}"></div></div><div class="two"><div class="field"><label>Check-in</label><input id="f_in" type="date" value="${b.checkIn||''}"></div><div class="field"><label>Check-out</label><input id="f_out" type="date" value="${b.checkOut||''}"></div></div><div class="two"><div class="field"><label>Amount (₹)</label><input id="f_price" type="number" value="${b.price||0}"></div><div class="field"><label>Discount (₹)</label><input id="f_discount" type="number" value="${b.discount||0}"></div></div><div class="field"><label>Payment mode</label><select id="f_pay">${['GPay','Bank Transfer','Cash','Cheque','Other'].map(x=>`<option ${x===b.paymentMode?'selected':''}>${x}</option>`).join('')}</select></div><div class="field"><label>Status</label><div class="actions">${['booked','cancelled','refunded'].map(s=>`<button class="btn ${b.status===s?'primary':''}" data-st="${s}">${s[0].toUpperCase()+s.slice(1)}</button>`).join('')}</div></div><div class="field"><label>Guest ID / documents — unlimited</label><div id="upload" class="upload">Choose one or many ID files</div><input id="files" type="file" multiple accept="image/*,.pdf" hidden><div id="filelist" class="filelist"></div><div id="savedFiles" class="filelist"></div></div><div class="field"><label>Note</label><textarea id="f_notes" rows="3">${esc(b.notes)}</textarea></div><div id="formErr" class="err"></div><div class="drawerActions"><button id="cancel" class="btn">Close</button>${admin()||!existing?'<button id="save" class="btn primary">Save booking</button>':''}${admin()&&existing?'<button id="cancelBooking" class="btn danger">Cancel booking</button>':''}</div>${existing&&b.status==='booked'?'<div style="margin-top:10px;font-size:12px;color:var(--soft)">Booking records are kept permanently; cancel/refund instead of hard deleting.</div>':''}`;
-if(existing) renderSavedFiles(existing.id);if(!admin()&&existing){$('cancel').onclick=closeDrawer;return}let status=b.status;$('drawer').querySelectorAll('[data-st]').forEach(x=>x.onclick=()=>{status=x.dataset.st;$('drawer').querySelectorAll('[data-st]').forEach(y=>y.classList.remove('primary'));x.classList.add('primary')});$('upload').onclick=()=>$('files').click();$('files').onchange=e=>{pendingFiles.push(...Array.from(e.target.files));renderFiles()};$('cancel').onclick=closeDrawer;if($('save'))$('save').onclick=()=>saveBooking(existing,status);if($('cancelBooking'))$('cancelBooking').onclick=()=>saveBooking(existing,'cancelled');openDrawer()}
+function form(existing,prefill){
+  pendingFiles=[];
+  const b=existing||{guestName:'',mobile:'',guests:1,checkIn:prefill,checkOut:'',price:0,discount:0,paymentMode:'GPay',status:'booked',notes:''};
+  const isStaffView=!!existing&&!admin();
+  $('drawerTitle').textContent=existing?(isStaffView?'View booking':'Booking details'):'New booking';
+  $('drawer').innerHTML=`
+    ${existing?`<div class="note"><b>${isStaffView?'Read-only staff view':'Booking details'}</b><br>Booked by: <b>${esc(b.staffId||b.staffName||b.createdBy||'—')}</b>${b.staffName?' — '+esc(b.staffName):''}</div>`:''}
+    <div class="field"><label>Guest name</label><input id="f_name" value="${esc(b.guestName)}" ${isStaffView?'readonly':''}></div>
+    <div class="two"><div class="field"><label>Mobile number</label><input id="f_mobile" value="${esc(b.mobile)}" ${isStaffView?'readonly':''}></div><div class="field"><label>Number of guests</label><input id="f_guests" type="number" min="1" value="${b.guests||1}" ${isStaffView?'disabled':''}></div></div>
+    <div class="two"><div class="field"><label>Check-in</label><input id="f_in" type="date" value="${b.checkIn||''}" ${isStaffView?'disabled':''}></div><div class="field"><label>Check-out</label><input id="f_out" type="date" value="${b.checkOut||''}" ${isStaffView?'disabled':''}></div></div>
+    <div class="two"><div class="field"><label>Amount (₹)</label><input id="f_price" type="number" value="${b.price||0}" ${isStaffView?'readonly':''}></div><div class="field"><label>Discount (₹)</label><input id="f_discount" type="number" value="${b.discount||0}" ${isStaffView?'readonly':''}></div></div>
+    <div class="field"><label>Payment mode</label><select id="f_pay" ${isStaffView?'disabled':''}>${['GPay','Bank Transfer','Cash','Cheque','Other'].map(x=>`<option ${x===b.paymentMode?'selected':''}>${x}</option>`).join('')}</select></div>
+    <div class="field"><label>Status</label><div class="actions">${['booked','cancelled','refunded'].map(s=>`<button type="button" class="btn ${b.status===s?'primary':''}" data-st="${s}" ${isStaffView?'disabled':''}>${s[0].toUpperCase()+s.slice(1)}</button>`).join('')}</div></div>
+    <div class="field"><label>Guest ID / documents — unlimited</label>${existing?'<div id="savedFiles" class="filelist"></div>':'<div id="upload" class="upload">Choose one or many ID files</div><input id="files" type="file" multiple accept="image/*,.pdf" hidden><div id="filelist" class="filelist"></div>'}</div>
+    <div class="field"><label>Note</label><textarea id="f_notes" rows="3" ${isStaffView?'readonly':''}>${esc(b.notes)}</textarea></div>
+    <div id="formErr" class="err"></div>
+    <div class="drawerActions"><button id="cancel" class="btn">Close</button>${!existing?'<button id="save" class="btn primary">Save booking</button>':''}${admin()&&existing?'<button id="cancelBooking" class="btn danger">Cancel booking</button>':''}</div>
+    ${existing?'<div style="margin-top:10px;font-size:12px;color:var(--soft)">Staff cannot edit saved bookings. Booking history and uploaded IDs are retained.</div>':''}`;
+  if(existing) renderSavedFiles(existing.id);
+  $('cancel').onclick=closeDrawer;
+  if(isStaffView){openDrawer();return;}
+  let status=b.status;
+  $('drawer').querySelectorAll('[data-st]').forEach(x=>x.onclick=()=>{status=x.dataset.st;$('drawer').querySelectorAll('[data-st]').forEach(y=>y.classList.remove('primary'));x.classList.add('primary')});
+  if($('upload'))$('upload').onclick=()=>$('files').click();
+  if($('files'))$('files').onchange=e=>{pendingFiles.push(...Array.from(e.target.files));renderFiles()};
+  if($('save'))$('save').onclick=()=>saveBooking(existing,status);
+  if($('cancelBooking'))$('cancelBooking').onclick=()=>saveBooking(existing,'cancelled');
+  openDrawer();
+}
 
 async function loadBookingFiles(bookingId){
   if(!bookingId) return [];
-  // Use the existing guest_documents table first. Some older builds used booking_files;
-  // fallback keeps both versions working without requiring schema changes.
-  let r=await sb.from('guest_documents')
+  let r=await sb.from('booking_files')
     .select('id,file_name,storage_path,mime_type,size_bytes,created_at')
     .eq('booking_id',bookingId)
+    .eq('archived',false)
     .order('created_at');
-  if(r.error && /guest_documents|relation|schema cache/i.test(r.error.message||'')){
-    r=await sb.from('booking_files')
+  if(r.error && /booking_files|archived|schema cache|column/i.test(r.error.message||'')){
+    r=await sb.from('guest_documents')
       .select('id,file_name,storage_path,mime_type,size_bytes,created_at')
       .eq('booking_id',bookingId)
       .order('created_at');
@@ -70,25 +96,21 @@ async function renderSavedFiles(bookingId){
   box.innerHTML='<div style="color:var(--soft)">Loading saved IDs…</div>';
   try{
     const files=await loadBookingFiles(bookingId);
-    if(!files.length){box.innerHTML='';return;}
+    if(!files.length){box.innerHTML='<div style="color:var(--soft)">No ID/document uploaded for this booking.</div>';return;}
     box.innerHTML='<div style="font-weight:800;margin:10px 0 5px">Saved ID files</div>';
     for(const f of files){
       const u=await sb.storage.from('guest-ids').createSignedUrl(f.storage_path,3600);
-      const url=u.data?.signedUrl;
-      const row=document.createElement('div'); row.className='fileitem';
-      const label=document.createElement('span'); label.textContent=f.file_name;
+      const row=document.createElement('div');row.className='fileitem';
+      const label=document.createElement('span');label.textContent=f.file_name;
       const actions=document.createElement('span');
-      if(url){
-        const a=document.createElement('a');
-        a.href=url;a.target='_blank';a.rel='noopener';a.className='btn';
-        a.textContent=(f.mime_type||'').startsWith('image/')?'View':'Open';
-        actions.appendChild(a);
+      if(u.data?.signedUrl){
+        const a=document.createElement('a');a.href=u.data.signedUrl;a.target='_blank';a.rel='noopener';a.className='btn';a.textContent=(f.mime_type||'').startsWith('image/')?'View ID':'Open document';actions.appendChild(a);
+      }else{
+        const e=document.createElement('span');e.className='err';e.textContent='File unavailable';actions.appendChild(e);
       }
       row.appendChild(label);row.appendChild(actions);box.appendChild(row);
     }
-  }catch(e){
-    box.innerHTML='<div class="err">Saved ID files could not be loaded: '+esc(e.message||e)+'</div>';
-  }
+  }catch(e){box.innerHTML='<div class="err">Saved ID files could not be loaded: '+esc(e.message||e)+'</div>';}
 }
 
 function renderFiles(){$('filelist').innerHTML=pendingFiles.map((f,i)=>`<div class="fileitem"><span>${esc(f.name)}</span><button class="btn" onclick="pendingFiles.splice(${i},1);renderFiles()">Remove</button></div>`).join('')}
