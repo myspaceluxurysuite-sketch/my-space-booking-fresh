@@ -9,37 +9,51 @@
 
 <style>
 *{box-sizing:border-box}
+
 body{
   margin:0;
   font-family:Arial,sans-serif;
   background:#f5f7f7;
   color:#173b3b;
 }
+
 .wrap{
-  max-width:1050px;
+  max-width:1200px;
   margin:auto;
-  padding:24px;
+  padding:20px;
 }
+
 .card{
   background:white;
   border-radius:16px;
-  padding:24px;
+  padding:22px;
   margin-bottom:20px;
   box-shadow:0 8px 30px #0001;
 }
-h1,h2{margin-top:0}
+
+h1,h2,h3{
+  margin-top:0;
+}
+
 .grid{
   display:grid;
-  grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
-  gap:14px;
+  grid-template-columns:repeat(auto-fit,minmax(210px,1fr));
+  gap:12px;
 }
-input,select,button{
+
+input,select,textarea,button{
   width:100%;
   padding:12px;
   border:1px solid #ccd6d6;
   border-radius:9px;
   font-size:15px;
 }
+
+textarea{
+  min-height:90px;
+  resize:vertical;
+}
+
 button{
   background:#174f4f;
   color:white;
@@ -47,49 +61,166 @@ button{
   cursor:pointer;
   font-weight:600;
 }
-button:hover{opacity:.9}
+
+button:hover{
+  opacity:.9;
+}
+
+button.secondary{
+  background:#607070;
+}
+
+button.danger{
+  background:#a33;
+}
+
+button.success{
+  background:#28734a;
+}
+
+button.warning{
+  background:#9a701d;
+}
+
 .top{
   display:flex;
   justify-content:space-between;
   gap:12px;
   align-items:center;
   flex-wrap:wrap;
+  margin-bottom:20px;
 }
-.hidden{display:none}
-.muted{color:#667}
+
+.hidden{
+  display:none!important;
+}
+
+.muted{
+  color:#667;
+}
+
 .msg{
-  padding:10px;
+  padding:11px;
   border-radius:8px;
   background:#eef5f5;
   margin-top:12px;
 }
+
+.msg.error{
+  background:#fff0f0;
+  color:#9b2226;
+}
+
+.msg.success{
+  background:#eef8f1;
+  color:#24613d;
+}
+
 .property{
-  padding:14px;
+  padding:15px;
   border:1px solid #ddd;
   border-radius:10px;
   margin-top:10px;
 }
+
 .property-name{
   font-size:18px;
   font-weight:700;
 }
+
 .property-address{
   color:#667;
   margin-top:5px;
 }
+
+.badge{
+  display:inline-block;
+  padding:5px 9px;
+  border-radius:20px;
+  font-size:12px;
+  font-weight:bold;
+  background:#eef5f5;
+}
+
+.badge.active{
+  background:#e8f6ec;
+  color:#28734a;
+}
+
+.badge.inactive{
+  background:#f5eeee;
+  color:#9b3333;
+}
+
 table{
   width:100%;
   border-collapse:collapse;
 }
+
 th,td{
   padding:10px;
   border-bottom:1px solid #e6eded;
   text-align:left;
   font-size:14px;
+  vertical-align:top;
 }
+
+th{
+  background:#f7f9f9;
+}
+
+.table-wrap{
+  overflow:auto;
+}
+
+.section-title{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:10px;
+  flex-wrap:wrap;
+}
+
+.small{
+  font-size:13px;
+}
+
+.calendar-box{
+  padding:15px;
+  border:1px solid #ddd;
+  border-radius:10px;
+  margin-top:12px;
+}
+
+.stat-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(160px,1fr));
+  gap:12px;
+}
+
+.stat{
+  background:#f5f8f8;
+  border-radius:12px;
+  padding:16px;
+}
+
+.stat-number{
+  font-size:26px;
+  font-weight:700;
+}
+
 @media(max-width:600px){
-  .wrap{padding:12px}
-  .card{padding:18px}
+  .wrap{
+    padding:10px;
+  }
+
+  .card{
+    padding:16px;
+  }
+
+  th,td{
+    font-size:13px;
+  }
 }
 </style>
 </head>
@@ -98,110 +229,316 @@ th,td{
 
 <div class="wrap">
 
-  <!-- LOGIN -->
-  <section id="login" class="card" style="max-width:430px;margin:70px auto">
-    <h1>Sign in</h1>
-    <p class="muted">Use your registered email and password.</p>
+<!-- LOGIN -->
+<section id="login" class="card" style="max-width:430px;margin:70px auto">
 
-    <input id="email" type="email" placeholder="Email">
+  <h1>Sign in</h1>
 
-    <br><br>
+  <p class="muted">
+    Use your registered email and password.
+  </p>
 
-    <input id="password" type="password" placeholder="Password">
+  <input
+    id="email"
+    type="email"
+    placeholder="Email"
+  >
 
-    <br><br>
+  <br><br>
 
-    <button onclick="login()">Log in</button>
+  <input
+    id="password"
+    type="password"
+    placeholder="Password"
+  >
 
-    <div id="loginMsg"></div>
-  </section>
+  <br><br>
+
+  <button onclick="login()">
+    Log in
+  </button>
+
+  <div id="loginMsg"></div>
+
+</section>
 
 
-  <!-- APP -->
-  <section id="app" class="hidden">
+<!-- APP -->
+<section id="app" class="hidden">
 
-    <div class="top">
-      <div>
-        <h1>My Space Luxury Suite</h1>
-        <div id="who" class="muted"></div>
-      </div>
+  <div class="top">
 
-      <button style="width:auto;padding:10px 18px" onclick="logout()">
-        Log out
-      </button>
+    <div>
+      <h1>My Space Luxury Suite</h1>
+      <div id="who" class="muted"></div>
     </div>
 
+    <button
+      style="width:auto;padding:10px 18px"
+      onclick="logout()">
+      Log out
+    </button>
 
-    <!-- ADMIN -->
-    <div id="adminArea" class="hidden">
+  </div>
 
-      <!-- PROPERTIES -->
-      <div class="card">
 
-        <h2>Properties</h2>
+  <!-- DASHBOARD -->
+  <div id="dashboard" class="card">
 
-        <div class="grid">
+    <h2>Dashboard</h2>
 
-          <input
-            id="propertyName"
-            placeholder="Property name"
-          >
+    <div class="stat-grid">
 
-          <input
-            id="propertyAddress"
-            placeholder="Location / Address"
-          >
-
-          <button onclick="addProperty()">
-            Add property
-          </button>
-
-        </div>
-
-        <div id="propertyMsg"></div>
-
-        <div id="propertyList">
-          Loading properties...
-        </div>
-
+      <div class="stat">
+        <div class="muted">Properties</div>
+        <div id="statProperties" class="stat-number">0</div>
       </div>
 
+      <div class="stat">
+        <div class="muted">Bookings</div>
+        <div id="statBookings" class="stat-number">0</div>
+      </div>
 
-      <!-- BOOKINGS -->
-      <div class="card">
-
-        <h2>Bookings</h2>
-
-        <div id="bookingList">
-          Loading...
-        </div>
-
+      <div class="stat">
+        <div class="muted">Active Properties</div>
+        <div id="statActive" class="stat-number">0</div>
       </div>
 
     </div>
 
+  </div>
 
-    <!-- PROFILE -->
+
+  <!-- ADMIN -->
+  <div id="adminArea" class="hidden">
+
+    <!-- PROPERTY MANAGEMENT -->
     <div class="card">
 
-      <h2>My profile</h2>
+      <div class="section-title">
+        <h2>Property Management</h2>
+        <span class="badge active">ADMIN</span>
+      </div>
 
-      <div id="profileBox">
+      <p class="muted">
+        Add properties and activate/deactivate them.
+        Deactivation keeps the property record in the database.
+      </p>
+
+      <div class="grid">
+
+        <input
+          id="propertyName"
+          placeholder="Property name"
+        >
+
+        <input
+          id="propertyAddress"
+          placeholder="Location / Address"
+        >
+
+        <button onclick="addProperty()">
+          Add Property
+        </button>
+
+      </div>
+
+      <div id="propertyMsg"></div>
+
+      <div id="propertyList">
+        Loading properties...
+      </div>
+
+    </div>
+
+
+    <!-- ALL BOOKINGS -->
+    <div class="card">
+
+      <div class="section-title">
+        <h2>All Bookings</h2>
+
+        <button
+          style="width:auto"
+          onclick="loadAll()">
+          Refresh
+        </button>
+      </div>
+
+      <div id="bookingList">
         Loading...
       </div>
 
     </div>
 
-  </section>
+  </div>
+
+
+  <!-- STAFF + ADMIN BOOKING FORM -->
+  <div id="bookingFormArea" class="card">
+
+    <div class="section-title">
+      <h2>New Booking</h2>
+      <span id="bookingPermission" class="badge"></span>
+    </div>
+
+    <div class="grid">
+
+      <select id="bookingProperty">
+        <option value="">Select property</option>
+      </select>
+
+      <input
+        id="guestName"
+        placeholder="Guest name"
+      >
+
+      <input
+        id="guestPhone"
+        placeholder="Guest phone"
+      >
+
+      <input
+        id="guestEmail"
+        type="email"
+        placeholder="Guest email"
+      >
+
+      <input
+        id="checkIn"
+        type="date"
+      >
+
+      <input
+        id="checkOut"
+        type="date"
+      >
+
+      <input
+        id="guestCount"
+        type="number"
+        min="1"
+        placeholder="Number of guests"
+      >
+
+      <input
+        id="bookingAmount"
+        type="number"
+        step="0.01"
+        min="0"
+        placeholder="Amount"
+      >
+
+    </div>
+
+    <br>
+
+    <textarea
+      id="bookingNotes"
+      placeholder="Notes">
+    </textarea>
+
+    <br>
+
+    <button onclick="addBooking()">
+      Save Booking
+    </button>
+
+    <div id="bookingMsg"></div>
+
+  </div>
+
+
+  <!-- STAFF CALENDAR -->
+  <div id="calendarArea" class="card">
+
+    <div class="section-title">
+
+      <div>
+        <h2>Calendar Availability</h2>
+
+        <p class="muted small">
+          Staff can block/unblock property dates.
+        </p>
+      </div>
+
+      <span class="badge">
+        DATE CONTROL
+      </span>
+
+    </div>
+
+    <div class="grid">
+
+      <select id="calendarProperty">
+        <option value="">Select property</option>
+      </select>
+
+      <input
+        id="calendarDate"
+        type="date"
+      >
+
+      <button onclick="blockDate()">
+        Block / Mark Unavailable
+      </button>
+
+    </div>
+
+    <div id="calendarMsg"></div>
+
+    <div
+      id="blockedDatesList"
+      class="calendar-box">
+      Select a property to see blocked dates.
+    </div>
+
+  </div>
+
+
+  <!-- PROFILE -->
+  <div class="card">
+
+    <h2>My Profile</h2>
+
+    <div id="profileBox">
+      Loading...
+    </div>
+
+  </div>
+
+
+  <!-- SHARED BOOKINGS -->
+  <div class="card">
+
+    <div class="section-title">
+
+      <h2>Booking Calendar / Records</h2>
+
+      <button
+        style="width:auto"
+        onclick="loadAll()">
+        Refresh
+      </button>
+
+    </div>
+
+    <div id="sharedBookingList">
+      Loading...
+    </div>
+
+  </div>
+
+</section>
 
 </div>
 
 
 <script>
 
-/* =========================
-   SUPABASE SETTINGS
-========================= */
+/* =====================================================
+   SUPABASE
+===================================================== */
 
 const SUPABASE_URL =
 "https://gaqzoybdlhjtvftykjxs.supabase.co";
@@ -209,348 +546,1412 @@ const SUPABASE_URL =
 const SUPABASE_ANON_KEY =
 "sb_publishable_VMxnlZ146Z-ufMgPSKxutA_oZJzNm3_";
 
-let sb;
-let currentProfile;
+let sb = null;
+let currentProfile = null;
+let currentUser = null;
+let propertiesCache = [];
+let bookingsCache = [];
 
 
-/* =========================
+/* =====================================================
    HELPERS
-========================= */
+===================================================== */
 
 function show(id,on=true){
-  document
-    .getElementById(id)
-    .classList
-    .toggle("hidden",!on);
+
+  const el=document.getElementById(id);
+
+  if(el){
+    el.classList.toggle("hidden",!on);
+  }
+
 }
 
-function msg(id,text){
-  document.getElementById(id).innerHTML =
-    '<div class="msg">'+text+'</div>';
+
+function escapeHtml(value){
+
+  return String(value ?? "")
+    .replaceAll("&","&amp;")
+    .replaceAll("<","&lt;")
+    .replaceAll(">","&gt;")
+    .replaceAll('"',"&quot;")
+    .replaceAll("'","&#039;");
+
 }
 
 
-/* =========================
+function message(id,text,type=""){
+
+  const el=document.getElementById(id);
+
+  if(!el) return;
+
+  el.innerHTML =
+    '<div class="msg '+escapeHtml(type)+'">'+
+    escapeHtml(text)+
+    '</div>';
+
+}
+
+
+function formatDate(value){
+
+  if(!value) return "";
+
+  return String(value);
+
+}
+
+
+function today(){
+
+  const d=new Date();
+
+  const y=d.getFullYear();
+  const m=String(d.getMonth()+1).padStart(2,"0");
+  const day=String(d.getDate()).padStart(2,"0");
+
+  return y+"-"+m+"-"+day;
+
+}
+
+
+/* =====================================================
    INITIALIZE
-========================= */
+===================================================== */
 
 async function init(){
 
-  sb = supabase.createClient(
+  sb=supabase.createClient(
     SUPABASE_URL,
     SUPABASE_ANON_KEY
   );
 
-  const {
-    data:{session}
-  } = await sb.auth.getSession();
+  const result=
+    await sb.auth.getSession();
+
+  const session=result.data.session;
 
   if(session){
+
     await loadApp(session.user);
+
   }
+
 }
 
 
-/* =========================
+/* =====================================================
    LOGIN
-========================= */
+===================================================== */
 
 async function login(){
 
-  const email =
+  const email=
     document.getElementById("email").value.trim();
 
-  const password =
+  const password=
     document.getElementById("password").value;
 
   if(!email || !password){
-    msg("loginMsg","Please enter email and password.");
+
+    message(
+      "loginMsg",
+      "Please enter email and password.",
+      "error"
+    );
+
     return;
   }
 
-  const {
-    data,
-    error
-  } = await sb.auth.signInWithPassword({
-    email,
-    password
-  });
 
-  if(error){
-    msg("loginMsg",error.message);
+  const result=
+    await sb.auth.signInWithPassword({
+      email:email,
+      password:password
+    });
+
+
+  if(result.error){
+
+    message(
+      "loginMsg",
+      result.error.message,
+      "error"
+    );
+
     return;
   }
 
-  await loadApp(data.user);
+
+  await loadApp(result.data.user);
+
 }
 
 
-/* =========================
+/* =====================================================
    LOAD APP
-========================= */
+===================================================== */
 
 async function loadApp(user){
 
-  const {
-    data,
-    error
-  } = await sb
-    .from("profiles")
-    .select("*")
-    .eq("id",user.id)
-    .single();
+  currentUser=user;
 
-  if(error){
-    msg(
+
+  const result=
+    await sb
+      .from("profiles")
+      .select("*")
+      .eq("id",user.id)
+      .single();
+
+
+  if(result.error){
+
+    message(
       "loginMsg",
-      "Login successful, but your booking-system profile was not found."
+      "Login successful, but profile was not found: "+
+      result.error.message,
+      "error"
     );
+
     return;
   }
 
-  currentProfile = data;
+
+  currentProfile=result.data;
+
 
   show("login",false);
   show("app",true);
 
-  document.getElementById("who").textContent =
-    user.email + " • " + data.role;
 
-  document.getElementById("profileBox").innerHTML =
-    "<b>Name:</b> " +
-    (data.full_name || "") +
-    "<br><b>Role:</b> " +
-    (data.role || "") +
-    "<br><b>Business:</b> " +
-    (data.business_name || "");
+  const role=
+    String(currentProfile.role || "")
+      .toLowerCase();
 
-  if(data.role === "admin"){
+
+  document.getElementById("who").textContent=
+    user.email+
+    " • "+
+    role;
+
+
+  document.getElementById("profileBox").innerHTML=
+
+    "<b>Name:</b> "+
+    escapeHtml(currentProfile.full_name || "")+
+
+    "<br><b>Role:</b> "+
+    escapeHtml(currentProfile.role || "")+
+
+    "<br><b>Business:</b> "+
+    escapeHtml(currentProfile.business_name || "")+
+
+    (currentProfile.staff_id
+      ? "<br><b>Staff ID:</b> "+
+        escapeHtml(currentProfile.staff_id)
+      : "");
+
+
+  if(role==="admin"){
 
     show("adminArea",true);
 
-    await loadProperties();
-    await loadBookings();
+    document.getElementById(
+      "bookingPermission"
+    ).textContent="ADMIN";
 
   }else{
 
-    document.getElementById("profileBox").innerHTML +=
-      "<br><br><b>Staff account</b>";
+    show("adminArea",false);
+
+    document.getElementById(
+      "bookingPermission"
+    ).textContent="STAFF";
 
   }
+
+
+  await loadAll();
+
 }
 
 
-/* =========================
+/* =====================================================
    LOGOUT
-========================= */
+===================================================== */
 
 async function logout(){
 
   await sb.auth.signOut();
 
   location.reload();
+
 }
 
 
-/* =========================
-   ADD PROPERTY
-========================= */
+/* =====================================================
+   LOAD EVERYTHING
+===================================================== */
 
-async function addProperty(){
-
-  const name =
-    document
-      .getElementById("propertyName")
-      .value
-      .trim();
-
-  const address =
-    document
-      .getElementById("propertyAddress")
-      .value
-      .trim();
-
-  if(!name){
-    msg(
-      "propertyMsg",
-      "Enter a property name."
-    );
-    return;
-  }
-
-  const {
-    error
-  } = await sb
-    .from("properties")
-    .insert({
-      name:name,
-      address:address
-    });
-
-  if(error){
-
-    msg(
-      "propertyMsg",
-      error.message
-    );
-
-    return;
-  }
-
-  msg(
-    "propertyMsg",
-    "Property added successfully."
-  );
-
-  document.getElementById("propertyName").value="";
-  document.getElementById("propertyAddress").value="";
+async function loadAll(){
 
   await loadProperties();
+
+  await loadBookings();
+
+  await loadBlockedDates();
+
 }
 
 
-/* =========================
+/* =====================================================
    LOAD PROPERTIES
-========================= */
+===================================================== */
 
 async function loadProperties(){
 
-  const box =
+  const box=
     document.getElementById("propertyList");
 
-  box.innerHTML =
-    "Loading properties...";
 
-  const {
-    data,
-    error
-  } = await sb
-    .from("properties")
-    .select("*")
-    .order("created_at",{ascending:false});
+  const result=
+    await sb
+      .from("properties")
+      .select("*")
+      .order("created_at",{ascending:false});
 
-  if(error){
 
-    box.innerHTML =
-      '<div class="msg">'+
-      error.message+
+  if(result.error){
+
+    box.innerHTML=
+      '<div class="msg error">'+
+      escapeHtml(result.error.message)+
       '</div>';
 
     return;
   }
 
-  if(!data || data.length === 0){
 
-    box.innerHTML =
+  propertiesCache=result.data || [];
+
+
+  document.getElementById(
+    "statProperties"
+  ).textContent=
+    propertiesCache.length;
+
+
+  document.getElementById(
+    "statActive"
+  ).textContent=
+    propertiesCache.filter(
+      p=>p.active !== false
+    ).length;
+
+
+  fillPropertySelects();
+
+
+  if(propertiesCache.length===0){
+
+    box.innerHTML=
       "<p>No properties added yet.</p>";
 
     return;
   }
 
-  box.innerHTML =
-    data.map(function(p){
+
+  box.innerHTML=
+    propertiesCache.map(function(p){
+
+      const active=
+        p.active !== false;
+
 
       return `
+
         <div class="property">
 
-          <div class="property-name">
-            ${escapeHtml(p.name || "")}
+          <div class="section-title">
+
+            <div>
+
+              <div class="property-name">
+                ${escapeHtml(p.name || "")}
+              </div>
+
+              <div class="property-address">
+                ${escapeHtml(
+                  p.address ||
+                  p.location ||
+                  ""
+                )}
+              </div>
+
+            </div>
+
+            <span class="badge ${
+              active
+                ? "active"
+                : "inactive"
+            }">
+              ${active
+                ? "ACTIVE"
+                : "INACTIVE"}
+            </span>
+
           </div>
 
-          <div class="property-address">
-            ${escapeHtml(p.address || p.location || "")}
-          </div>
+          <br>
+
+          <button
+            style="width:auto"
+            class="${active
+              ? "danger"
+              : "success"}"
+            onclick="toggleProperty(
+              '${escapeHtml(p.id)}',
+              ${active}
+            )">
+
+            ${active
+              ? "Deactivate"
+              : "Activate"}
+
+          </button>
 
         </div>
+
       `;
 
     }).join("");
+
 }
 
 
-/* =========================
+/* =====================================================
+   PROPERTY SELECTS
+===================================================== */
+
+function fillPropertySelects(){
+
+  const activeProperties=
+    propertiesCache.filter(
+      p=>p.active !== false
+    );
+
+
+  const html=
+    '<option value="">Select property</option>'+
+    activeProperties.map(
+      p=>
+        '<option value="'+
+        escapeHtml(p.id)+
+        '">'+
+        escapeHtml(p.name)+
+        '</option>'
+    ).join("");
+
+
+  document.getElementById(
+    "bookingProperty"
+  ).innerHTML=html;
+
+
+  document.getElementById(
+    "calendarProperty"
+  ).innerHTML=html;
+
+}
+
+
+/* =====================================================
+   ADD PROPERTY
+===================================================== */
+
+async function addProperty(){
+
+  const name=
+    document
+      .getElementById("propertyName")
+      .value
+      .trim();
+
+
+  const address=
+    document
+      .getElementById("propertyAddress")
+      .value
+      .trim();
+
+
+  if(!name){
+
+    message(
+      "propertyMsg",
+      "Enter a property name.",
+      "error"
+    );
+
+    return;
+  }
+
+
+  const result=
+    await sb
+      .from("properties")
+      .insert({
+
+        name:name,
+
+        address:address,
+
+        active:true
+
+      });
+
+
+  if(result.error){
+
+    message(
+      "propertyMsg",
+      result.error.message,
+      "error"
+    );
+
+    return;
+  }
+
+
+  message(
+    "propertyMsg",
+    "Property added successfully.",
+    "success"
+  );
+
+
+  document.getElementById(
+    "propertyName"
+  ).value="";
+
+
+  document.getElementById(
+    "propertyAddress"
+  ).value="";
+
+
+  await loadProperties();
+
+}
+
+
+/* =====================================================
+   ACTIVATE / DEACTIVATE PROPERTY
+===================================================== */
+
+async function toggleProperty(id,currentActive){
+
+  const newValue=!currentActive;
+
+
+  const result=
+    await sb
+      .from("properties")
+      .update({
+        active:newValue
+      })
+      .eq("id",id);
+
+
+  if(result.error){
+
+    message(
+      "propertyMsg",
+      result.error.message,
+      "error"
+    );
+
+    return;
+  }
+
+
+  message(
+    "propertyMsg",
+    newValue
+      ? "Property activated."
+      : "Property deactivated.",
+    "success"
+  );
+
+
+  await loadProperties();
+
+}
+
+
+/* =====================================================
+   ADD BOOKING
+===================================================== */
+
+async function addBooking(){
+
+  const propertyId=
+    document
+      .getElementById("bookingProperty")
+      .value;
+
+
+  const guestName=
+    document
+      .getElementById("guestName")
+      .value
+      .trim();
+
+
+  const guestPhone=
+    document
+      .getElementById("guestPhone")
+      .value
+      .trim();
+
+
+  const guestEmail=
+    document
+      .getElementById("guestEmail")
+      .value
+      .trim();
+
+
+  const checkIn=
+    document
+      .getElementById("checkIn")
+      .value;
+
+
+  const checkOut=
+    document
+      .getElementById("checkOut")
+      .value;
+
+
+  const guests=
+    Number(
+      document
+        .getElementById("guestCount")
+        .value
+    );
+
+
+  const amountValue=
+    document
+      .getElementById("bookingAmount")
+      .value;
+
+
+  const amount=
+    amountValue
+      ? Number(amountValue)
+      : 0;
+
+
+  const notes=
+    document
+      .getElementById("bookingNotes")
+      .value
+      .trim();
+
+
+  if(
+    !propertyId ||
+    !guestName ||
+    !checkIn ||
+    !checkOut
+  ){
+
+    message(
+      "bookingMsg",
+      "Property, guest name, check-in and check-out are required.",
+      "error"
+    );
+
+    return;
+  }
+
+
+  if(checkOut <= checkIn){
+
+    message(
+      "bookingMsg",
+      "Check-out must be after check-in.",
+      "error"
+    );
+
+    return;
+  }
+
+
+  if(!guests || guests<1){
+
+    message(
+      "bookingMsg",
+      "Enter number of guests.",
+      "error"
+    );
+
+    return;
+  }
+
+
+  /* CHECK BLOCKED DATES */
+
+  const blocked=
+    await sb
+      .from("blocked_dates")
+      .select("blocked_date,blocked")
+      .eq("property_id",propertyId)
+      .eq("blocked",true)
+      .gte("blocked_date",checkIn)
+      .lt("blocked_date",checkOut);
+
+
+  if(blocked.error){
+
+    message(
+      "bookingMsg",
+      blocked.error.message,
+      "error"
+    );
+
+    return;
+  }
+
+
+  if(blocked.data &&
+     blocked.data.length>0){
+
+    message(
+      "bookingMsg",
+      "Selected dates contain blocked/unavailable dates.",
+      "error"
+    );
+
+    return;
+  }
+
+
+  /* CHECK EXISTING BOOKINGS */
+
+  const existing=
+    await sb
+      .from("bookings")
+      .select("id,check_in,check_out,status")
+      .eq("property_id",propertyId)
+      .lt("check_in",checkOut)
+      .gt("check_out",checkIn);
+
+
+  if(existing.error){
+
+    message(
+      "bookingMsg",
+      existing.error.message,
+      "error"
+    );
+
+    return;
+  }
+
+
+  const activeStatuses=[
+    "confirmed",
+    "pending",
+    "booked",
+    "reserved"
+  ];
+
+
+  const conflict=
+    (existing.data || []).some(
+      b=>
+        activeStatuses.includes(
+          String(b.status || "")
+            .toLowerCase()
+        )
+    );
+
+
+  if(conflict){
+
+    message(
+      "bookingMsg",
+      "This property already has a booking in the selected date range.",
+      "error"
+    );
+
+    return;
+  }
+
+
+  /* INSERT */
+
+  const result=
+    await sb
+      .from("bookings")
+      .insert({
+
+        property_id:propertyId,
+
+        guest_name:guestName,
+
+        guest_phone:guestPhone,
+
+        guest_email:guestEmail,
+
+        check_in:checkIn,
+
+        check_out:checkOut,
+
+        guests:guests,
+
+        amount:amount,
+
+        status:"confirmed",
+
+        notes:notes,
+
+        created_by:currentUser.id
+
+      });
+
+
+  if(result.error){
+
+    message(
+      "bookingMsg",
+      result.error.message,
+      "error"
+    );
+
+    return;
+  }
+
+
+  message(
+    "bookingMsg",
+    "Booking saved successfully.",
+    "success"
+  );
+
+
+  clearBookingForm();
+
+
+  await loadBookings();
+
+}
+
+
+/* =====================================================
+   CLEAR BOOKING FORM
+===================================================== */
+
+function clearBookingForm(){
+
+  document.getElementById(
+    "guestName"
+  ).value="";
+
+  document.getElementById(
+    "guestPhone"
+  ).value="";
+
+  document.getElementById(
+    "guestEmail"
+  ).value="";
+
+  document.getElementById(
+    "checkIn"
+  ).value="";
+
+  document.getElementById(
+    "checkOut"
+  ).value="";
+
+  document.getElementById(
+    "guestCount"
+  ).value="";
+
+  document.getElementById(
+    "bookingAmount"
+  ).value="";
+
+  document.getElementById(
+    "bookingNotes"
+  ).value="";
+
+}
+
+
+/* =====================================================
    LOAD BOOKINGS
-========================= */
+===================================================== */
 
 async function loadBookings(){
 
-  const box =
-    document.getElementById("bookingList");
+  const result=
+    await sb
+      .from("bookings")
+      .select("*")
+      .order("created_at",{ascending:false})
+      .limit(500);
 
-  const {
-    data,
-    error
-  } = await sb
-    .from("bookings")
-    .select("*")
-    .order("created_at",{ascending:false})
-    .limit(100);
 
-  if(error){
+  if(result.error){
 
-    box.innerHTML =
-      '<div class="msg">'+
-      error.message+
+    document.getElementById(
+      "bookingList"
+    ).innerHTML=
+      '<div class="msg error">'+
+      escapeHtml(result.error.message)+
+      '</div>';
+
+    document.getElementById(
+      "sharedBookingList"
+    ).innerHTML=
+      '<div class="msg error">'+
+      escapeHtml(result.error.message)+
       '</div>';
 
     return;
   }
 
-  if(!data || data.length === 0){
 
-    box.textContent =
-      "No bookings yet.";
+  bookingsCache=result.data || [];
+
+
+  document.getElementById(
+    "statBookings"
+  ).textContent=
+    bookingsCache.length;
+
+
+  renderBookings(
+    "bookingList",
+    bookingsCache,
+    true
+  );
+
+
+  renderBookings(
+    "sharedBookingList",
+    bookingsCache,
+    false
+  );
+
+}
+
+
+/* =====================================================
+   RENDER BOOKINGS
+===================================================== */
+
+function renderBookings(
+  targetId,
+  data,
+  adminControls
+){
+
+  const box=
+    document.getElementById(targetId);
+
+
+  if(!data || data.length===0){
+
+    box.innerHTML=
+      "<p>No bookings yet.</p>";
 
     return;
   }
 
-  box.innerHTML = `
-    <div style="overflow:auto">
+
+  box.innerHTML=`
+
+    <div class="table-wrap">
+
       <table>
-        <tr>
-          <th>Guest</th>
-          <th>Check-in</th>
-          <th>Check-out</th>
-          <th>Status</th>
-        </tr>
 
-        ${data.map(function(b){
+        <thead>
 
-          return `
-            <tr>
-              <td>${escapeHtml(b.guest_name || "")}</td>
-              <td>${escapeHtml(b.check_in || "")}</td>
-              <td>${escapeHtml(b.check_out || "")}</td>
-              <td>${escapeHtml(b.status || "")}</td>
-            </tr>
-          `;
+          <tr>
 
-        }).join("")}
+            <th>Property</th>
+            <th>Guest</th>
+            <th>Phone</th>
+            <th>Check-in</th>
+            <th>Check-out</th>
+            <th>Guests</th>
+            <th>Amount</th>
+            <th>Status</th>
+            <th>Created By</th>
+            ${adminControls
+              ? "<th>Action</th>"
+              : ""}
+
+          </tr>
+
+        </thead>
+
+        <tbody>
+
+          ${data.map(function(b){
+
+            const property=
+              propertiesCache.find(
+                p=>p.id===b.property_id
+              );
+
+
+            return `
+
+              <tr>
+
+                <td>
+                  ${escapeHtml(
+                    property
+                      ? property.name
+                      : b.property_id
+                  )}
+                </td>
+
+                <td>
+                  ${escapeHtml(
+                    b.guest_name
+                  )}
+                  <br>
+                  <span class="muted small">
+                    ${escapeHtml(
+                      b.guest_email || ""
+                    )}
+                  </span>
+                </td>
+
+                <td>
+                  ${escapeHtml(
+                    b.guest_phone || ""
+                  )}
+                </td>
+
+                <td>
+                  ${escapeHtml(
+                    formatDate(b.check_in)
+                  )}
+                </td>
+
+                <td>
+                  ${escapeHtml(
+                    formatDate(b.check_out)
+                  )}
+                </td>
+
+                <td>
+                  ${escapeHtml(
+                    b.guests || ""
+                  )}
+                </td>
+
+                <td>
+                  ${escapeHtml(
+                    b.amount ?? ""
+                  )}
+                </td>
+
+                <td>
+                  <span class="badge">
+                    ${escapeHtml(
+                      b.status || ""
+                    )}
+                  </span>
+                </td>
+
+                <td>
+                  ${escapeHtml(
+                    b.created_by || ""
+                  )}
+                </td>
+
+                ${adminControls
+                  ? `
+                    <td>
+
+                      <button
+                        class="warning"
+                        style="width:auto"
+                        onclick="cancelBooking(
+                          '${escapeHtml(b.id)}'
+                        )">
+
+                        Cancel
+
+                      </button>
+
+                    </td>
+                  `
+                  : ""}
+
+              </tr>
+
+            `;
+
+          }).join("")}
+
+        </tbody>
 
       </table>
+
     </div>
+
   `;
+
 }
 
 
-/* =========================
-   SECURITY / HTML ESCAPE
-========================= */
+/* =====================================================
+   CANCEL BOOKING
+===================================================== */
 
-function escapeHtml(value){
+async function cancelBooking(id){
 
-  return String(value)
-    .replaceAll("&","&amp;")
-    .replaceAll("<","&lt;")
-    .replaceAll(">","&gt;")
-    .replaceAll('"',"&quot;")
-    .replaceAll("'","&#039;");
+  const ok=
+    confirm(
+      "Cancel this booking? The booking record will remain in the database."
+    );
+
+
+  if(!ok) return;
+
+
+  const result=
+    await sb
+      .from("bookings")
+      .update({
+        status:"cancelled"
+      })
+      .eq("id",id);
+
+
+  if(result.error){
+
+    alert(result.error.message);
+
+    return;
+  }
+
+
+  await loadBookings();
+
 }
 
 
-/* =========================
+/* =====================================================
+   BLOCK DATE
+===================================================== */
+
+async function blockDate(){
+
+  const propertyId=
+    document
+      .getElementById("calendarProperty")
+      .value;
+
+
+  const date=
+    document
+      .getElementById("calendarDate")
+      .value;
+
+
+  if(!propertyId || !date){
+
+    message(
+      "calendarMsg",
+      "Select property and date.",
+      "error"
+    );
+
+    return;
+  }
+
+
+  /* FIRST CHECK IF RECORD EXISTS */
+
+  const existing=
+    await sb
+      .from("blocked_dates")
+      .select("id,blocked")
+      .eq("property_id",propertyId)
+      .eq("blocked_date",date)
+      .maybeSingle();
+
+
+  if(existing.error){
+
+    message(
+      "calendarMsg",
+      existing.error.message,
+      "error"
+    );
+
+    return;
+  }
+
+
+  let result;
+
+
+  if(existing.data){
+
+    result=
+      await sb
+        .from("blocked_dates")
+        .update({
+          blocked:true,
+          created_by:currentUser.id
+        })
+        .eq("id",existing.data.id);
+
+  }else{
+
+    result=
+      await sb
+        .from("blocked_dates")
+        .insert({
+
+          property_id:propertyId,
+
+          blocked_date:date,
+
+          blocked:true,
+
+          created_by:currentUser.id
+
+        });
+
+  }
+
+
+  if(result.error){
+
+    message(
+      "calendarMsg",
+      result.error.message,
+      "error"
+    );
+
+    return;
+  }
+
+
+  message(
+    "calendarMsg",
+    "Date marked unavailable.",
+    "success"
+  );
+
+
+  await loadBlockedDates();
+
+}
+
+
+/* =====================================================
+   LOAD BLOCKED DATES
+===================================================== */
+
+async function loadBlockedDates(){
+
+  const propertyId=
+    document
+      .getElementById("calendarProperty")
+      .value;
+
+
+  const box=
+    document.getElementById(
+      "blockedDatesList"
+    );
+
+
+  if(!propertyId){
+
+    box.innerHTML=
+      "Select a property to see blocked dates.";
+
+    return;
+  }
+
+
+  const result=
+    await sb
+      .from("blocked_dates")
+      .select("*")
+      .eq("property_id",propertyId)
+      .eq("blocked",true)
+      .order("blocked_date",{ascending:true});
+
+
+  if(result.error){
+
+    box.innerHTML=
+      '<div class="msg error">'+
+      escapeHtml(result.error.message)+
+      '</div>';
+
+    return;
+  }
+
+
+  const data=result.data || [];
+
+
+  if(data.length===0){
+
+    box.innerHTML=
+      "<p>No blocked dates.</p>";
+
+    return;
+  }
+
+
+  box.innerHTML=`
+
+    <h3>Unavailable Dates</h3>
+
+    <div class="table-wrap">
+
+      <table>
+
+        <thead>
+
+          <tr>
+            <th>Date</th>
+            <th>Action</th>
+          </tr>
+
+        </thead>
+
+        <tbody>
+
+          ${data.map(function(row){
+
+            return `
+
+              <tr>
+
+                <td>
+                  ${escapeHtml(
+                    row.blocked_date
+                  )}
+                </td>
+
+                <td>
+
+                  <button
+                    class="success"
+                    style="width:auto"
+                    onclick="unblockDate(
+                      '${escapeHtml(row.id)}'
+                    )">
+
+                    Make Available
+
+                  </button>
+
+                </td>
+
+              </tr>
+
+            `;
+
+          }).join("")}
+
+        </tbody>
+
+      </table>
+
+    </div>
+
+  `;
+
+}
+
+
+/* =====================================================
+   UNBLOCK DATE
+   We UPDATE blocked=false.
+   We do NOT delete the record.
+===================================================== */
+
+async function unblockDate(id){
+
+  const result=
+    await sb
+      .from("blocked_dates")
+      .update({
+        blocked:false
+      })
+      .eq("id",id);
+
+
+  if(result.error){
+
+    message(
+      "calendarMsg",
+      result.error.message,
+      "error"
+    );
+
+    return;
+  }
+
+
+  message(
+    "calendarMsg",
+    "Date is now available.",
+    "success"
+  );
+
+
+  await loadBlockedDates();
+
+}
+
+
+/* =====================================================
+   PROPERTY CHANGE
+===================================================== */
+
+document
+  .getElementById("calendarProperty")
+  .addEventListener(
+    "change",
+    loadBlockedDates
+  );
+
+
+/* =====================================================
+   DEFAULT DATE
+===================================================== */
+
+document.getElementById(
+  "calendarDate"
+).value=today();
+
+
+/* =====================================================
    START
-========================= */
+===================================================== */
 
 init();
 
