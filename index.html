@@ -76,19 +76,24 @@ function form(existing,prefill){
 
 async function loadBookingFiles(bookingId){
   if(!bookingId) return [];
-  let r=await sb.from('booking_files')
+  // First read the table used by the uploader. Select only columns that are
+  // actually written by this app; do not depend on optional columns such as
+  // size_bytes or archived.
+  let r=await sb.from('guest_documents')
     .select('id,file_name,storage_path,mime_type,created_at')
     .eq('booking_id',bookingId)
-    .eq('archived',false)
     .order('created_at');
-  if(r.error && /booking_files|archived|schema cache|column/i.test(r.error.message||'')){
-    r=await sb.from('guest_documents')
-      .select('id,file_name,storage_path,mime_type,created_at')
-      .eq('booking_id',bookingId)
-      .order('created_at');
-  }
-  if(r.error) throw r.error;
-  return r.data||[];
+  if(!r.error && (r.data||[]).length) return r.data||[];
+
+  // Older installations may have stored documents in booking_files.
+  let b=await sb.from('booking_files')
+    .select('id,file_name,storage_path,mime_type,created_at')
+    .eq('booking_id',bookingId)
+    .order('created_at');
+  if(!b.error && (b.data||[]).length) return b.data||[];
+
+  if(r.error && b.error) throw r.error;
+  return [];
 }
 async function renderSavedFiles(bookingId){
   const box=$('savedFiles');
