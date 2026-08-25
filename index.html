@@ -295,6 +295,46 @@ function toast(m){const t=document.getElementById('toastEl');t.textContent=m;t.s
 function setSync(busy){document.getElementById('syncDot').className='sync-dot'+(busy?' busy':'');document.getElementById('syncText').textContent=busy?'Saving…':'Synced';}
 function activeProperty(){return state.properties.find(p=>p.id===state.activePropertyId);}
 function activePropertyName(){const p=activeProperty();return p?p.name:'';}
+function dbStatusForSave(status){return status==='booked'?'confirmed':status;}
+async function saveBookingRow(payload, existingId){
+  let res;
+  if(existingId){
+    res=await sb.from('bookings').update(payload).eq('id',existingId).select().single();
+  }else{
+    res=await sb.from('bookings').insert(payload).select().single();
+  }
+  // Older database constraint may use 'confirmed' instead of 'booked'. Retry automatically.
+  if(res.error && payload.status==='booked' && /status_check|check constraint/i.test(res.error.message||'')){
+    const retry={...payload,status:'confirmed'};
+    if(existingId) return await sb.from('bookings').update(retry).eq('id',existingId).select().single();
+    return await sb.from('bookings').insert(retry).select().single();
+  }
+  return res;
+}
+async function uploadGuestIds(bookingId, files){
+  if(!bookingId || !files || !files.length) return [];
+  const uploaded=[];
+  for(const file of Array.from(files)){
+    const safe=file.name.replace(/[^a-zA-Z0-9._-]/g,'_');
+    const path=`${bookingId}/${Date.now()}_${Math.random().toString(36).slice(2,8)}_${safe}`;
+    const up=await sb.storage.from('guest-ids').upload(path,file,{upsert:false,contentType:file.type||'application/octet-stream'});
+    if(up.error) throw up.error;
+    const ins=await sb.from('guest_documents').insert({booking_id:bookingId,file_name:file.name,storage_path:path,mime_type:file.type||'',file_size:file.size,uploaded_by:state.currentUser.id}).select().single();
+    if(ins.error) throw ins.error;
+    uploaded.push(ins.data);
+  }
+  return uploaded;
+}
+async function getGuestIdLinks(bookingId){
+  const {data,error}=await sb.from('guest_documents').select('*').eq('booking_id',bookingId).order('created_at');
+  if(error) return [];
+  const out=[];
+  for(const d of (data||[])){
+    const r=await sb.storage.from('guest-ids').createSignedUrl(d.storage_path,3600);
+    if(!r.error && r.data?.signedUrl) out.push({name:d.file_name,url:r.data.signedUrl});
+  }
+  return out;
+}
 
 /* ---------- Auth ---------- */
 function authEl(){return document.getElementById('authScreen');}
@@ -334,7 +374,7 @@ async function loadBookings(propId){
   if(br.error)throw br.error;if(bl.error)throw bl.error;
   state.bookings=(br.data||[]).map(b=>({
     id:b.id,propertyId:b.property_id,guestName:b.guest_name||'',mobile:b.guest_phone||'',email:b.guest_email||'',guests:Number(b.guests||1),
-    checkIn:b.check_in,checkOut:b.check_out,price:Number(b.amount||0),discount:0,paymentMode:'',status:b.status||'booked',refundAmount:0,notes:b.notes||'',imageKeys:[],isBlock:false,createdAt:b.created_at||'',createdBy:b.created_by||''
+    checkIn:b.check_in,checkOut:b.check_out,price:Number(b.amount||0),discount:0,paymentMode:'',status:(b.status==='confirmed'?'booked':(b.status||'booked')),refundAmount:0,notes:b.notes||'',imageKeys:[],isBlock:false,createdAt:b.created_at||'',createdBy:b.created_by||''
   }));
   state.blocked=bl.data||[];
   setSync(false);
@@ -401,13 +441,59 @@ function renderBlockedView(rec){document.getElementById('drawerTitle').textConte
 function renderReadOnlyBooking(b){document.getElementById('drawerTitle').textContent='Booking details';document.getElementById('drawerBody').innerHTML=`<div class="readonly-note">You're signed in as staff. Existing bookings are read-only. Only an admin can edit or cancel an existing booking.</div><div class="ro-row"><span class="k">Guest name</span><span class="v">${esc(b.guestName)||'—'}</span></div><div class="ro-row"><span class="k">Mobile</span><span class="v">${esc(b.mobile)||'—'}</span></div><div class="ro-row"><span class="k">Guests</span><span class="v">${b.guests||1}</span></div><div class="ro-row"><span class="k">Check-in</span><span class="v">${esc(b.checkIn)}</span></div><div class="ro-row"><span class="k">Check-out</span><span class="v">${esc(b.checkOut)}</span></div><div class="ro-row"><span class="k">Amount</span><span class="v">${money(b.price)}</span></div><div class="ro-row"><span class="k">Status</span><span class="v">${statusBadge(b.status)}</span></div>${b.notes?`<div class="ro-row"><span class="k">Notes</span><span class="v">${esc(b.notes)}</span></div>`:''}<div class="drawer-actions"><button class="btn primary" id="ro_close">Close</button></div>`;overlay.classList.add('show');document.getElementById('ro_close').onclick=closeDrawer;}
 
 function openDrawerForm(existing,prefill){
-  state.editingBookingId=existing?.id||null;document.getElementById('drawerTitle').textContent=existing?'Booking details':'New booking';const b=existing||{id:null,guestName:'',mobile:'',guests:1,checkIn:prefill.checkIn,checkOut:prefill.checkOut,price:'',discount:0,paymentMode:'',status:'booked',refundAmount:0,notes:''};
-  document.getElementById('drawerBody').innerHTML=`<div class="field"><label>Guest name</label><input id="f_name" value="${esc(b.guestName)}" placeholder="Full name"></div><div class="row2"><div class="field"><label>Mobile number</label><input type="tel" id="f_mobile" value="${esc(b.mobile)}" placeholder="10-digit number"></div><div class="field"><label>Number of guests</label><input type="number" min="1" id="f_guests" value="${b.guests||1}"></div></div><div class="row2"><div class="field"><label>Check-in date</label><input type="date" id="f_checkin" value="${esc(b.checkIn)}"></div><div class="field"><label>Check-out date</label><input type="date" id="f_checkout" value="${esc(b.checkOut)}"></div></div><div class="err" id="dateErr">Check-out must be after check-in.</div><div class="field"><label>Amount (₹)</label><input type="number" min="0" id="f_price" value="${b.price||''}" placeholder="0"></div><div class="field"><label>Payment mode</label><select id="f_pay"><option value="">Not specified</option><option>GPay</option><option>Bank Transfer</option><option>Cash</option><option>Cheque</option><option>Other</option></select></div><div class="field"><label>Status</label><div class="status-picker" id="statusPicker"><button type="button" class="sel-booked ${b.status==='booked'?'active':''}" data-v="booked">Booked</button><button type="button" class="sel-cancelled ${b.status==='cancelled'?'active':''}" data-v="cancelled">Cancelled</button><button type="button" class="sel-refunded ${b.status==='refunded'?'active':''}" data-v="refunded">Refunded</button></div></div><div class="field" id="refundField" style="display:${b.status==='refunded'?'block':'none'}"><label>Refund amount (₹)</label><input type="number" id="f_refund" value="${b.refundAmount||''}"></div><div class="field"><label>Note</label><textarea id="f_notes" rows="3" placeholder="Any extra detail...">${esc(b.notes)}</textarea></div><div class="drawer-actions"><button class="btn" id="cancelBtn">Close</button><button class="btn primary" id="saveBtn">Save booking</button></div>`;overlay.classList.add('show');
-  let currentStatus=b.status||'booked';document.querySelectorAll('#statusPicker button').forEach(btn=>btn.onclick=()=>{currentStatus=btn.dataset.v;document.querySelectorAll('#statusPicker button').forEach(x=>x.classList.remove('active'));btn.classList.add('active');document.getElementById('refundField').style.display=currentStatus==='refunded'?'block':'none';});document.getElementById('f_pay').value=b.paymentMode||'';document.getElementById('cancelBtn').onclick=closeDrawer;
-  document.getElementById('saveBtn').onclick=async()=>{const name=document.getElementById('f_name').value.trim(),ci=document.getElementById('f_checkin').value,co=document.getElementById('f_checkout').value;if(!name||!ci||!co||co<=ci){document.getElementById('dateErr').style.display='block';return;}document.getElementById('dateErr').style.display='none';const payload={property_id:state.activePropertyId,guest_name:name,guest_phone:document.getElementById('f_mobile').value.trim(),guest_email:'',check_in:ci,check_out:co,guests:Number(document.getElementById('f_guests').value)||1,amount:Number(document.getElementById('f_price').value)||0,status:currentStatus,notes:document.getElementById('f_notes').value.trim(),created_by:state.currentUser.id};if(existing){const {error}=await sb.from('bookings').update(payload).eq('id',existing.id);if(error){toast(error.message);return;}}else{const {error}=await sb.from('bookings').insert(payload);if(error){toast(error.message);return;}}closeDrawer();toast(existing?'Booking updated':'Booking saved');await refreshAll();if(!existing||currentStatus==='booked'){const fake={...b,...payload,propertyId:state.activePropertyId,guestName:name,mobile:payload.guest_phone,checkIn:ci,checkOut:co,price:payload.amount,guests:payload.guests,status:currentStatus};showSaveConfirmation(fake,!existing);}};
+  state.editingBookingId=existing?.id||null;
+  document.getElementById('drawerTitle').textContent=existing?'Booking details':'New booking';
+  const b=existing||{id:null,guestName:'',mobile:'',guests:1,checkIn:prefill.checkIn,checkOut:prefill.checkOut,price:'',discount:0,paymentMode:'',status:'booked',refundAmount:0,notes:''};
+  document.getElementById('drawerBody').innerHTML=`
+    <div class="field"><label>Guest name</label><input id="f_name" value="${esc(b.guestName)}" placeholder="Full name"></div>
+    <div class="row2"><div class="field"><label>Mobile number</label><input type="tel" id="f_mobile" value="${esc(b.mobile)}" placeholder="10-digit number"></div><div class="field"><label>Number of guests</label><input type="number" min="1" id="f_guests" value="${b.guests||1}"></div></div>
+    <div class="row2"><div class="field"><label>Check-in date</label><input type="date" id="f_checkin" value="${esc(b.checkIn)}"></div><div class="field"><label>Check-out date</label><input type="date" id="f_checkout" value="${esc(b.checkOut)}"></div></div>
+    <div class="err" id="dateErr">Check-out must be after check-in.</div>
+    <div class="field"><label>Amount (₹)</label><input type="number" min="0" id="f_price" value="${b.price||''}" placeholder="0"></div>
+    <div class="field"><label>Payment mode</label><select id="f_pay"><option value="">Not specified</option><option>GPay</option><option>Bank Transfer</option><option>Cash</option><option>Cheque</option><option>Other</option></select></div>
+    <div class="field"><label>Status</label><div class="status-picker" id="statusPicker"><button type="button" class="sel-booked ${b.status==='booked'?'active':''}" data-v="booked">Booked</button><button type="button" class="sel-cancelled ${b.status==='cancelled'?'active':''}" data-v="cancelled">Cancelled</button><button type="button" class="sel-refunded ${b.status==='refunded'?'active':''}" data-v="refunded">Refunded</button></div></div>
+    <div class="field" id="refundField" style="display:${b.status==='refunded'?'block':'none'}"><label>Refund amount (₹)</label><input type="number" id="f_refund" value="${b.refundAmount||''}"></div>
+    <div class="field"><label>Guest ID / Documents <span style="font-weight:400;color:var(--ink-faint)">(multiple files allowed)</span></label><input id="f_id_files" type="file" multiple accept="image/*,.pdf"><div id="idFileHint" style="font-size:11.5px;color:var(--ink-faint);margin-top:6px">Upload Aadhaar, passport, driving licence etc. You can select unlimited documents.</div></div>
+    <div class="field"><label>Note</label><textarea id="f_notes" rows="3" placeholder="Any extra detail...">${esc(b.notes)}</textarea></div>
+    <div class="drawer-actions"><button class="btn" id="cancelBtn">Close</button><button class="btn primary" id="saveBtn">Save booking</button></div>`;
+  overlay.classList.add('show');
+  let currentStatus=b.status||'booked';
+  document.querySelectorAll('#statusPicker button').forEach(btn=>btn.onclick=()=>{currentStatus=btn.dataset.v;document.querySelectorAll('#statusPicker button').forEach(x=>x.classList.remove('active'));btn.classList.add('active');document.getElementById('refundField').style.display=currentStatus==='refunded'?'block':'none';});
+  document.getElementById('f_pay').value=b.paymentMode||'';
+  document.getElementById('cancelBtn').onclick=closeDrawer;
+  document.getElementById('saveBtn').onclick=async()=>{
+    const saveBtn=document.getElementById('saveBtn');
+    const name=document.getElementById('f_name').value.trim(),ci=document.getElementById('f_checkin').value,co=document.getElementById('f_checkout').value;
+    if(!name||!ci||!co||co<=ci){document.getElementById('dateErr').style.display='block';return;}
+    document.getElementById('dateErr').style.display='none';saveBtn.disabled=true;saveBtn.textContent='Saving…';setSync(true);
+    try{
+      const files=document.getElementById('f_id_files')?.files;
+      const payload={property_id:state.activePropertyId,guest_name:name,guest_phone:document.getElementById('f_mobile').value.trim(),guest_email:'',check_in:ci,check_out:co,guests:Number(document.getElementById('f_guests').value)||1,amount:Number(document.getElementById('f_price').value)||0,status:currentStatus,notes:document.getElementById('f_notes').value.trim(),created_by:state.currentUser.id};
+      const result=await saveBookingRow(payload,existing?.id||null);
+      if(result.error) throw result.error;
+      const saved=result.data;
+      let idCount=0;
+      if(files && files.length && saved?.id){
+        try{idCount=(await uploadGuestIds(saved.id,files)).length;}catch(e){toast('Booking saved, but ID upload failed: '+(e.message||e));}
+      }
+      closeDrawer();toast(existing?'Booking updated':'Booking saved');await refreshAll();
+      if(!existing||currentStatus==='booked'){
+        const fake={...b,...payload,id:saved?.id,propertyId:state.activePropertyId,guestName:name,mobile:payload.guest_phone,checkIn:ci,checkOut:co,price:payload.amount,guests:payload.guests,status:currentStatus,idCount};
+        showSaveConfirmation(fake,!existing);
+      }
+    }catch(e){console.error(e);toast(e.message||'Could not save booking.');}
+    finally{setSync(false);saveBtn.disabled=false;saveBtn.textContent='Save booking';}
+  };
 }
-function showSaveConfirmation(b,isNew){const amount=Number(b.price||0),prop=activePropertyName();document.getElementById('drawerTitle').textContent=isNew?'Booking saved':'Booking updated';document.getElementById('drawerBody').innerHTML=`<p style="font-size:13.5px;color:var(--ink-soft);line-height:1.6;">${esc(b.guestName)}'s booking is saved for ${esc(prop)}.</p><div class="drawer-actions"><button class="btn" id="conf_close">Done</button>${b.mobile?'<button class="btn wa" id="conf_wa">Send on WhatsApp</button>':''}</div>`;overlay.classList.add('show');document.getElementById('conf_close').onclick=async()=>{closeDrawer();await refreshAll();};if(b.mobile)document.getElementById('conf_wa').onclick=()=>window.open(buildWhatsAppLink(b,prop,amount),'_blank');}
-function buildWhatsAppLink(b,prop,amount){let n=(b.mobile||'').replace(/\D/g,'');if(n.length===10)n='91'+n;const lines=[`Hello ${b.guestName}, greetings from My Space Luxury Suite!`,'',`Your booking at ${prop} is confirmed.`,`Check-in: ${b.checkIn}`,`Check-out: ${b.checkOut}`,`Guests: ${b.guests}`,`Amount payable: ${money(amount)}`,'',`Thank you for choosing us!`];return `https://wa.me/${n}?text=${encodeURIComponent(lines.join('\n'))}`;}
+function showSaveConfirmation(b,isNew){
+  const amount=Number(b.price||0),prop=activePropertyName();
+  document.getElementById('drawerTitle').textContent=isNew?'Booking saved':'Booking updated';
+  document.getElementById('drawerBody').innerHTML=`<p style="font-size:13.5px;color:var(--ink-soft);line-height:1.6;">${esc(b.guestName)}'s booking is saved for ${esc(prop)}.</p><p style="font-size:12px;color:var(--ink-faint);">${b.idCount?b.idCount+' guest ID/document(s) uploaded.':'No guest ID uploaded.'}</p><div class="drawer-actions"><button class="btn" id="conf_close">Done</button><button class="btn wa" id="conf_wa">Send booking details on WhatsApp</button></div>`;
+  overlay.classList.add('show');
+  document.getElementById('conf_close').onclick=async()=>{closeDrawer();await refreshAll();};
+  document.getElementById('conf_wa').onclick=()=>window.open(buildWhatsAppLink(b,prop,amount),'_blank');
+}
+function buildWhatsAppLink(b,prop,amount){const n='919041068105';const lines=[`New booking received — ${b.guestName}`,`Property: ${prop}`,`Guest mobile: ${b.mobile||'—'}`,`Guests: ${b.guests}`,`Check-in: ${b.checkIn}`,`Check-out: ${b.checkOut}`,`Amount: ${money(amount)}`,`Status: ${b.status||'booked'}`,b.notes?`Note: ${b.notes}`:''];return `https://wa.me/${n}?text=${encodeURIComponent(lines.filter(Boolean).join('\n'))}`;}
 
 /* ---------- Excel ---------- */
 function safeSheetName(n){n=(n||'Property').replace(/[\\\/\?\*\[\]:]/g,' ').trim().slice(0,31);return n||'Property';}
